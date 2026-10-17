@@ -1,0 +1,11 @@
+# Build outputs (build.sh makes these)
+*.o
+*.bin
+*.map
+*.CAR
+!tools/memtest/MEMTEST.CAR
+data.s
+enddata.s
+__pycache__/
+# Audio previews (rendered from music.py; large)
+*.mp3
