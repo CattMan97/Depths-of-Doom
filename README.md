@@ -404,7 +404,7 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$0178-$01C9` | Keycard drop (from the overlay; the stack stays above `$01E0`) |
 | `$0BE5`, `$2BE5`, `$3FEF` | "Full" pickup messages and their routine (from the overlay) |
 | `$05C8`, `$06C8`, `$07C8` | Track loader and keycard carrier (from the overlay), in the spare ends of the column-writer pages |
-| `$0100-$016B` | Tunnel colours, from the VBI (from the overlay; the stack never gets below `$01C0`) |
+| `$0100-$0176` | Tunnel colours, from the VBI (from the overlay; the stack stays at `$01E0` and above: `tests/checks/system.py` checks it) |
 | `$0340-$03B5` | Monster sounds (from the overlay; the game never uses CIO) |
 | `$03B6-$03D8` | The trigger reader (from the overlay; IOCB 7's tail and the printer buffer) |
 | `$04F0-$04FD` | The 8x8 multiply (from the overlay) |
@@ -438,6 +438,8 @@ Needs `ca65`/`ld65` from cc65 and Python 3.
 
     sh build.sh        # -> DEPTHS_OF_DOOM.CAR
 
+`tests/setup.sh` builds a pinned cc65 and everything the tests need (see Testing).
+
 
 - `game.cfg` links the game image and the overlay (`menu.s`, written to `ovl.bin`).
 - **RAM under the OS ROM:** `osram.s` is linked with the game into `osr.bin`
@@ -466,3 +468,29 @@ Needs `ca65`/`ld65` from cc65 and Python 3.
 (`E_HP`, `E_SPEED`, `DMG`, `ATKCOOL`) are constants at the top of `depthsofdoom.s`. Maze
 shape settings (loop count, room count, minimum imp distance) are in `genmaze` and
 `place_enemies`.
+
+## Testing
+Everything is tested headless in an emulated 64K XL (atari800's library, with the
+built-in Altirra OS), driven by Python scripts:
+
+    tests/setup.sh       # once: builds cc65, libatari800 and the harness into tests/.tools
+    tests/run_all.sh     # build the cartridge, run every check (a few minutes)
+    tests/run_all.sh items monsters      # just those checks
+
+| Check | Covers |
+|---|---|
+| `gameplay` | levels 1-4: contents, pickups, the three weapons, the locked exit and keycard |
+| `items` | pickups refused at full stats (HEALTH/AMMO/TIME MAX), the keycard carrier and its level lines |
+| `monsters` | fireballs, brute speed, animation, death and score |
+| `mazes` | all 15 levels on three seeds: one exit and entrance, reachable, dead ends at most 4 tiles |
+| `seeds` | same seed, same levels; game over, retry, back to the menu |
+| `flow` | the wake-up scene and skipping it, the demo, the ending |
+| `input_sound` | fire taps and latency, being hurt, the music stopping for the tunnel |
+| `system` | the stack page, the OS ROM off, RESET, 16K / 128K / 320K machines |
+
+`tests/tools/` has the speed tools: `bench.py` (100 fixed views, monsters frozen: the
+number quoted under Speed), `compare.py` (the same 32 views from two builds, picture by
+picture: an optimisation should report 0 differ), `profile.py` (cycles per routine) and
+`fps.py`. `tests/lib/dod.py` is the library they share (drive the emulator, read the
+game's variables by name).
+

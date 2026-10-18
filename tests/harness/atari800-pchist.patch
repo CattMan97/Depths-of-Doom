@@ -1,0 +1,18 @@
+--- a/src/cpu.c
++++ b/src/cpu.c
+@@ -85,6 +85,7 @@
+ void (*CPU_rts_handler)(void) = NULL;
+ 
+ /* 6502 instruction profiling */
++unsigned int *CPU_pchist;
+ #ifdef MONITOR_PROFILE
+ int CPU_instruction_count[256];
+ #endif
+@@ -885,6 +886,7 @@
+ 		}
+ #endif /* NEW_CYCLE_EXACT */
+ 
++		if (CPU_pchist) CPU_pchist[(UWORD) (GET_PC() - 1)] += cycles[insn];
+ #ifdef MONITOR_PROFILE
+ 		CPU_instruction_count[insn]++;
+ 		MONITOR_coverage[old_PC = PC - 1].count++;
