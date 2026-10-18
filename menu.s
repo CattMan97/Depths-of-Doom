@@ -862,19 +862,22 @@ lsv:    .byte 1
 ; BANNER: "GAME OVER" in big letters across the middle of all three frame
 ;         buffers (whichever is on screen shows it): a black box, rows 24-39,
 ;         bytes 6-33, and the 53x7 bitmap at pixel 14, rows 28-34
+BXT     = 24 * VROWS / 32           ; (rows in the shown frame: 2 * VROWS)
+BXH     = 16 * VROWS / 32
+BMT     = BXT + (BXH - 7) / 2
 BANNER: ldx #2
 @b:     lda bufhi,x
         clc
-        adc #>(24*40)
+        adc #>(BXT*40)
         sta gptr+1
-        lda #<(24*40)
+        lda #<(BXT*40)
         sta gptr
         jsr bclear
         lda bufhi,x
         clc
-        adc #>(28*40)
+        adc #>(BMT*40)
         sta gptr+1
-        lda #<(28*40)
+        lda #<(BMT*40)
         sta gptr
         lda #0
         sta bnk
@@ -919,7 +922,7 @@ bnext:  clc
         bcc @x
         inc gptr+1
 @x:     rts
-bclear: lda #16                 ; the black box: 16 rows, bytes 6-33
+bclear: lda #BXH                ; the black box: BXH rows, bytes 6-33
         sta bnr
 @r:     ldy #33
         lda #0

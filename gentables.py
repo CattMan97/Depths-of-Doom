@@ -120,7 +120,6 @@ table('gtab', G + [g << 4 for g in G] + [g * 17 for g in G])
 table('nibr', [max(0, min(15, i - 8)) for i in range(32)])   # index = brightness + 8
 table('nibl', [max(0, min(15, i - 8)) << 4 for i in range(32)])
 # LMS high-byte offsets of the 64 rows (row * 40)
-table('rowhi', [(min(r, 63 - r) * 40) >> 8 for r in range(64)])   # (rows 32-63 show 31-0: the mirror)
 # wall brightness by scale / 4 (distance fog): lit faces, shaded faces
 fl = [max(1, min(11, int(round(1 + 10 * min(1.0, (4 * i + 2) / 40.0) ** 0.8)))) for i in range(64)]   # walls top out at 11: the exit (15) glows
 table('fogl', fl)

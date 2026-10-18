@@ -38,16 +38,16 @@ COLDSV  = $E477         ; (in the OS ROM: switched back on first)
 .macro GDL bufa, mir
 .local top
 top:    .byte $70, $F0, $42, <HUD3, >HUD3, $82
-        .repeat 128, ln
+        .repeat 128, ln         ; (each buffer row: 64 / VROWS scanlines)
         .if ln = 127
         .byte $CF
         .else
         .byte $4F
         .endif
-        .if mir && (ln / 2) >= 32
-        .word bufa + (63 - ln / 2) * 40
+        .if mir && ln >= 64
+        .word bufa + ((127 - ln) * VROWS / 64) * 40
         .else
-        .word bufa + (ln / 2) * 40
+        .word bufa + (ln * VROWS / 64) * 40
         .endif
         .endrepeat
         .byte $42, <HUD, >HUD, $02, $41
@@ -746,8 +746,8 @@ wrj = *
 wrp2 = *
         sta CW0,y
 wrx:    rts
-mul3:   .repeat 33, r           ; writer entry for row r
-        .byte 3 * r
+mul3:   .repeat 33, r           ; writer entry for row r (each writer row is
+        .byte 3 * (r * VROWS / 32)  ;   32 / VROWS of the drawing's rows)
         .endrepeat
 
 ; ---------------------------------------------------------------------
@@ -836,13 +836,13 @@ unmir:  ldx shownb
         lda bufhi,x
         sta sptr+1
         clc
-        adc #>(63 * NPAIRS)
+        adc #>((2 * VROWS - 1) * NPAIRS)
         sta gptr+1
         lda #0
         sta sptr
-        lda #<(63 * NPAIRS)
+        lda #<((2 * VROWS - 1) * NPAIRS)
         sta gptr
-        ldx #32
+        ldx #VROWS
 @r:     ldy #NPAIRS-1
 @c:     lda (sptr),y
         sta (gptr),y

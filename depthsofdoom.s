@@ -83,6 +83,9 @@ XITVBV  = xitvbv        ; (osram.s: the OS ROM is off)
 
 ; ---------------- RAM layout (16K machine: $0000-$3FFF)
 CW0     = $0500         ; generated column writers, one page per buffer
+.ifndef VROWS
+VROWS   = 16            ; rows drawn above the horizon (32: full detail)
+.endif
 CW1     = $0600
 CW2     = $0700
 MDLA    = $0800         ; automap display lists (mode D), two in turn
@@ -260,7 +263,7 @@ mordl   = MBUF+MT_ORDL
 mattack = MBUF+MT_ATK       ; attack volume: bass, -, lead
 .importzp MT_TICK, MT_FAST, MT_BDIST, MT_LDIST, MT_ATK, MT_BFLOOR, MT_LFLOOR, MT_LRATE
 .importzp MT_DRUM, MT_BFREQ, MT_PLO, MT_PHI, MT_ORDB, MT_ORDL, MTLEN
-.import offlo, offhi, cosfix, gtab, rowhi, fogl, fogs
+.import offlo, offhi, cosfix, gtab, fogl, fogs
 .import hudline1, msg_level, msg_empty
 .import gungfx, flashgfx
 .importzp AMMOPOS, KILLPOS, HEALTHPOS, LVLPOS
@@ -949,6 +952,16 @@ dltail: lda #$42
 .segment "CODE"
 gdlo:   .byte <gdl0, <gdl1, <gdl2
 gdhi:   .byte >gdl0, >gdl1, >gdl2
+; rowhi: display row r (0-63, a pair of scanlines) -> the high byte of its
+;   buffer row's offset (rows 32-63 mirror 31-0; VROWS rows are drawn).  For
+;   the wake-up's eyelids, which rewrite the shown list (menu.s: lid).
+rowhi:  .repeat 64, r
+        .if r < 32
+        .byte ((r * VROWS / 32) * 40) >> 8
+        .else
+        .byte (((63 - r) * VROWS / 32) * 40) >> 8
+        .endif
+        .endrepeat
 mdllo:  .byte <MDLA, <MDLB
 
 ; dlprep: point the spare list at buffer `buf` (game or map list), and
@@ -2392,7 +2405,7 @@ gen_writers:                    ; per buffer: 32 entries of STA row,X (the
         sta genl
         lda bufhi,x
         sta genh
-        ldx #32
+        ldx #VROWS              ; (rows drawn: the top half's, VROWS of them)
         ldy #0
 @row:   lda #$9D
         sta (gptr),y
