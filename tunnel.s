@@ -144,8 +144,8 @@ tunvbi: inc tunt
         sta AUDC4
         rts
 
-tuncol:   .byte $46, $2A, $1C, $C8, $86, $68      ; red, orange, yellow, green,
-        .byte $46, $2A, $1C, $C8, $86, $68      ;   blue, purple (twice: mod 6)
+tuncol:   .byte $46, $3A, $2C, $C8, $86, $68      ; red, orange, yellow, green,
+        .byte $46, $3A, $2C, $C8, $86, $68      ;   blue, purple (twice: mod 6)
 tunreg:   .byte 0, 1, 2, 3, 4, 7  ; ring colour n -> PCOLR0-3, COLOR0, COLOR3
 tunt:   .byte 0
 tunc:   .byte 0

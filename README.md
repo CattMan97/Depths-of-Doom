@@ -192,7 +192,7 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
 - Walls farther than about 5 tiles are drawn solid. Keycards and monsters are still in colour (they're sprites).
 - **Every level has a tint**, cycling gray, gold, gray, purple, gray, teal (`theme1` in
   `depthsofdoom.s`). Gold is hue 2: hue 1, the Atari's nominal gold, reads as yellow-green
-  on real NTSC sets. The whole view turns red when you're hurt.
+  on real NTSC sets, so nothing in the game uses it (the yellows are hue 2 too). The whole view turns red when you're hurt.
 - **T** switches the textures off: plain shaded walls, a little faster to draw. The game
   runs in ticks of 1/20 s, so you and the monsters move at the same pace either way.
 

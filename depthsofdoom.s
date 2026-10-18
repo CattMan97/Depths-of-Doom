@@ -187,7 +187,7 @@ C_EXIT  = $44           ; exit door, solid red
 C_LOCKED = $00          ; locked exit, solid black
 C_HAND  = $3A
 C_GUNHI = $0C
-C_FLASH = $1E
+C_FLASH = $2E
 T_LEVEL = 30            ; seconds added per level, plus 2 s per step to the exit
 T_START = 180           ; seconds on the clock at the start of a game (level 1)
 T_KILL  = 10            ; seconds added per kill
@@ -198,7 +198,7 @@ T_FLASH = 10            ; clock ticks below this
 T_BLINK = 30            ; clock blinks below this
 ESPMAX  = 32
 C_MWALL = $46           ; automap colours
-C_MDOOR = $1C
+C_MDOOR = $2C
 C_MYOU  = $0E
 C_IMP   = $26
 C_PAIN  = $0E
@@ -5711,7 +5711,7 @@ settex: tay
         adc texhi,y
         sta tlo+1
         rts
-firecol:.byte $1E, $3A
+firecol:.byte $2E, $3A
 
 ; ---------------------------------------------------------------------
 ; colvis: A = X' (screen x + 32).  Carry set if the wall in that column is
