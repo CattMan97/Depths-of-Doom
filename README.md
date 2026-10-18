@@ -138,7 +138,7 @@ Bug reports and ideas go in the repository's Issues.
   picks a level 1-15 (it wraps), fire goes there, any key cancels. You keep your
   health, weapons and score, and the clock gets that level's time on top.
 
-Every level is a **new maze**, built from a 4-digit **seed** shown on the bottom line.
+Every level is a **new maze**, built from a 4-digit **seed** shown on the upper HUD.
 - **Main menu:** the title (the DOOM drips blood: each letter grows drips that swell
   and let go of drops that fall down the screen), and two choices picked with the stick (up / down) and
   started with fire, START or RETURN: **Start with a random seed**, or **Play your own
