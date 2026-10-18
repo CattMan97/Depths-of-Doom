@@ -283,15 +283,16 @@ seg("RODATA")
 seg("RODATA2")
 WEAPONS = ["PISTOL ", "SHOTGUN", "SMG    "]
 table('wpnname', screencode(''.join(WEAPONS)))
-SHOTGUN_PIC = [
-    ".....GG.GG......",
-    ".....GG.GG......",
-    ".....GG.GG......",
-    ".....GG.GG......",
-    ".....GG.GG......",
-    "....GGGGGGG.....",
-    "....GGGGGGG.....",
-    "....GGGGGGG.....",
+SHOTGUN_PIC = [                  # a Remington Model 10 trench gun, from behind: bayonet
+                                 #   up over the muzzle, ventilated heat shield, pump
+    ".......G........",
+    "......GGG.......",
+    "......GGG.......",
+    "......GGG.......",
+    ".....GGGGG......",
+    ".....G.G.G......",
+    ".....GGGGG......",
+    ".....G.G.G......",
     "....GGGGGGG.....",
     "....GG...GG.....",
     "..HHGGGGGGGHH...",
@@ -380,23 +381,25 @@ PICKUPS = {          # solid shapes: they're drawn small and half height
     "..############..",
     "................",
     "................"],
- 'shotgun': [
+ 'shotgun': [                      # the trench gun, muzzle left: bayonet, vented
+                                  #   heat shield, magazine tube, pump, stock
     "................",
     "................",
     "................",
     "................",
     "................",
-    "................",
-    "...........####.",
+    ".....#.#.#.#....",
     "################",
-    "################",
-    "...........#####",
-    "...........#####",
+    "##..###########.",
+    "......####..####",
     "............####",
+    ".............###",
     "................",
     "................",
     "................",
-    "................"],
+    "................",
+    "................",
+    ],
  'chaingun': [                     # the SMG: a MAC-10, muzzle left (stubby barrel,
     "................",           #   boxy receiver, cocking knob on top, trigger
     "................",           #   guard, the magazine down through the grip)

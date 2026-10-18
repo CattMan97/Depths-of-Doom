@@ -51,7 +51,8 @@ cartridge back on and cold-starts. (Like a power-cycle, it clears the high score
 | SMG | from level 4 | 1 | 1 | automatic while held, about 6 shots/s |
 
 Picking up a weapon switches to it and gives some ammo (+10 for the shotgun, +20 for the
-SMG). In your hand the pistol is black, the shotgun brown and the SMG silver. A weapon you don't have yet lies somewhere in each level until you find it.
+SMG). In your hand the pistol is black, the shotgun (a trench gun with its bayonet
+fixed) brown and the SMG silver. A weapon you don't have yet lies somewhere in each level until you find it.
 
 ## Pickups
 Green **ammo** clips (+16 at first, growing with monster toughness: +18 on level 4,
@@ -370,7 +371,8 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
     are reset, so it stays cheap on the big maps. Each monster walks to the neighbouring
     tile one step closer (farther away it heads straight for you). Collision checks the imp's whole body, so imps can't cut corners.
 - **Pickups** are 16x16 one-colour pictures, pre-baked for each scale like the
-  monsters: an ammo box, a medkit, an hourglass, the shotgun, the SMG (drawn as a
+  monsters: an ammo box, a medkit, an hourglass, the shotgun (a Remington Model 10 trench
+  gun: vented heat shield, pump, bayonet), the SMG (drawn as a
   MAC-10: boxy receiver, stubby barrel, the magazine down through the grip) and the
   keycard.
 - **Other sprites:** Player 0 is the gun, player 1 the hand, and the four missiles,
