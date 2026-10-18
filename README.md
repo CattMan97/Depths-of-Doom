@@ -74,7 +74,7 @@ monsters, picked at random, carries it, and drops it where it dies; the level's 
 still includes time for a detour. The bottom line says **FIND THE EXIT DOOR!** until
 you've seen the exit, then **FIND THE <colour> KEYCARD, THEN EXIT!** for a few
 seconds, then **KILL THE MONSTERS TO GET THE KEYCARD!** (or the keycard line again once
-it has been dropped). Once you have it, the HUD shows `KEY`, the exit opens
+it has been dropped). Once you have it, the bottom bar shows `KEY`, the exit opens
 (**KEYCARD ACCEPTED - THE EXIT IS OPEN**), and the line goes back to finding the exit.
 
 An open exit is plain glowing white, the same white as the chevron stripes beside it.
@@ -138,7 +138,7 @@ Bug reports and ideas go in the repository's Issues.
   picks a level 1-15 (it wraps), fire goes there, any key cancels. You keep your
   health, weapons and score, and the clock gets that level's time on top.
 
-Every level is a **new maze**, built from a 4-digit **seed** shown on the upper HUD.
+Every level is a **new maze**, built from a 4-digit **seed** shown on the top bar.
 - **Main menu:** the title (the DOOM drips blood: each letter grows drips that swell
   and let go of drops that fall down the screen), and two choices picked with the stick (up / down) and
   started with fire, START or RETURN: **Start with a random seed**, or **Play your own
@@ -405,7 +405,7 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$08A0-$08FC` | Demo bot: route choosing (from the overlay) |
 | `$0900-$099F` | Per-column bookkeeping |
 | `$09A0-$09FA` | Game-over banner: bitmap and helpers (from the overlay) |
-| `$0A00-$0A4F` | HUD |
+| `$0A00-$0A4F` | Bottom bar (two lines: weapon, ammo, kills, keycard and health; the message line) |
 | `$0A50-$0AAF` | Depth buffer, sprite rows |
 | `$0AB0-$0AF8` | Demo message and bot variables (from the overlay) |
 | `$0B00-$0BDD` | Sprite staging and variables |
