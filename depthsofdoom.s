@@ -86,6 +86,9 @@ CW0     = $0500         ; generated column writers, one page per buffer
 .ifndef VROWS
 VROWS   = 16            ; rows drawn above the horizon (32: full detail)
 .endif
+.ifndef NBAND
+NBAND   = 4             ; texture bands per half wall (8: full detail)
+.endif
 CW1     = $0600
 CW2     = $0700
 MDLA    = $0800         ; automap display lists (mode D), two in turn
@@ -248,7 +251,7 @@ ATKCOOL = 20            ; ticks between enemy hits
 .import msg_died, hudline3, msg_tout
 .import texlo, texhi, msg_texon, msg_texoff, msg_pause, compass
 .importzp AMMODIG
-.import qcos, tdel, nibl, nibr
+.import qcos, tdel, tdel4, nibl, nibr
 .importzp NID
 .import wpnname, gungfx3, handq3, pklo, pkhi, pkcol
 .import msg_kill, msg_gotkey, msg_ammo, msg_health, msg_time, msg_shotgun
@@ -2208,14 +2211,16 @@ doorlum:.byte 15, 3                         ; exit: glowing / locked: dark
 ; =====================================================================
 ; Wall columns: dpairs (osram.s) draws them.  mkruns turns the 8 texture
 ; bands of a pair into runs (equal neighbours merged).
-rkt:    .byte >bendt, (>bendt)+1, (>bendt)+2, (>bendt)+3, (>bendt)+4, (>bendt)+5, (>bendt)+6
+rkt:    .repeat NBAND - 1, k
+        .byte (>bendt) + k
+        .endrepeat
 ; mkruns: bands -> runs (equal neighbours merged): rt/rb values, rk = the
 ;         page of bendt for the end band (0 for the last run).  Keeps X.
 mkruns: stx tmp
         ldx #0
         stx rdirty
         ldy #0
-@l:     cpy #7
+@l:     cpy #NBAND-1
         beq @last
         lda bt,y
         cmp bt+1,y
@@ -2232,9 +2237,9 @@ mkruns: stx tmp
         inx
 @n:     iny
         bne @l
-@last:  lda bt+7
+@last:  lda bt+NBAND-1
         sta rt,x
-        lda bb+7
+        lda bb+NBAND-1
         sta rb,x
         lda #0
         sta rk,x

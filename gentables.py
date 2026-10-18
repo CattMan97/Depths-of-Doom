@@ -751,6 +751,11 @@ assert NID <= 256
 # tdel[id * 8 + row] = offset + 8 (so offset + shade is 0-31: no clamping)
 seg("RODATA")
 table('tdel', [SHADE[TEXTURES[nm][r][u]] + 8 for nm in ORDER for u in range(TCOLS) for r in range(TROWS)])
+# tdel4: the same with 4 bands (NBAND = 4: taller pixels): each band takes the
+#   stronger of its two rows, so thin lines (trims, rails) don't vanish
+def _strong(a, b): return a if abs(a) >= abs(b) else b
+table('tdel4', [_strong(SHADE[TEXTURES[nm][2 * b][u]], SHADE[TEXTURES[nm][2 * b + 1][u]]) + 8
+                for nm in ORDER for u in range(TCOLS) for b in range(TROWS // 2)])
 seg("RODATA2")
 out.append('.export NID')
 out.append(f'NID = {NID}')

@@ -60,9 +60,9 @@ gdl2:   GDL BUF2, 1
 ; bendt: where texture band k (1-7) ends, for a wall of scale s: row
 ;   32 - s + (k * 32 * s) / 256, or 0 while that's still above the screen.
 ;   A page per k, by s (texcol used to multiply for each band).
-bendt:  .repeat 7, kk
+bendt:  .repeat NBAND - 1, kk
         .repeat 256, sc
-        .byte ((32 - sc + (((kk + 1) * 32 * sc) >> 8)) > 0) * (32 - sc + (((kk + 1) * 32 * sc) >> 8))
+        .byte ((32 - sc + (((kk + 1) * (256 / NBAND) * sc) >> 8)) > 0) * (32 - sc + (((kk + 1) * (256 / NBAND) * sc) >> 8))
         .endrepeat
         .endrepeat
 .assert (bendt & $FF) = 0, error, "bendt must be page-aligned"
@@ -516,7 +516,7 @@ hzs:    cmp #HAZID+16
 ;   id ktid at shade Y.  bbhi/bblo: bb = bt | the shorter ray's (kstid,
 ;   shade Y).  bbfill: bb = bt | A.  All mark the runs for rebuilding.
 .macro TPTR tid
-        lda tid                 ; gptr = tdel + id * 8
+        lda tid                 ; gptr = tdel + id * 8 (tdel4 + id * 4: 4 bands)
         sty tbase
         ldy #0
         sty gptr+1
@@ -524,18 +524,25 @@ hzs:    cmp #HAZID+16
         rol gptr+1
         asl
         rol gptr+1
+.if NBAND = 8
         asl
         rol gptr+1
         adc #<tdel              ; (C clear: the rol out of a 0)
         sta gptr
         lda gptr+1
         adc #>tdel
+.else
+        adc #<tdel4
+        sta gptr
+        lda gptr+1
+        adc #>tdel4
+.endif
         sta gptr+1
         lda #$FE                ; (a new bt: bb is stale too)
 .endmacro
 bthi:   TPTR ktid
         sta kstid
-        ldy #7
+        ldy #NBAND-1
 @l:     lda (gptr),y
         adc tbase               ; (C clear: no sum passes 255)
         tax
@@ -546,7 +553,7 @@ bthi:   TPTR ktid
         bmi dirty
 btlo:   TPTR ktid
         sta kstid
-        ldy #7
+        ldy #NBAND-1
 @l:     lda (gptr),y
         adc tbase
         tax
@@ -559,7 +566,7 @@ dirty:  lda #1
         ldx pairx
         rts
 bbhi:   TPTR kstid
-        ldy #7
+        ldy #NBAND-1
 @l:     lda (gptr),y
         adc tbase
         tax
@@ -570,7 +577,7 @@ bbhi:   TPTR kstid
         bpl @l
         bmi dirty
 bblo:   TPTR kstid
-        ldy #7
+        ldy #NBAND-1
 @l:     lda (gptr),y
         adc tbase
         tax
@@ -583,7 +590,7 @@ bblo:   TPTR kstid
 bbfill: sta tmp
         lda #$FE
         sta kstid
-        ldy #7
+        ldy #NBAND-1
 @f:     lda bt,y
         ora tmp
         sta bb,y

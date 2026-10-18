@@ -3,17 +3,24 @@ flow: a random monster carries it; the level line walks you through it."""
 import os, sys; sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lib'))
 from dod import *
 
+def msg_soon(g, n=10):
+    """The message line, polled (a snapshot can land while it is being redrawn)."""
+    for k in range(n):
+        if g.msg(): return g.msg()
+        g.run(1)
+    return g.msg()
+
 # ---- full stats: the pickup stays, and the line says why
 g = Game(seed=5, tag='it'); g.start('0420')
 h = [t for t in g.things() if t[1] == 0x81][0]; g.place(h[2], h[3]); g.run(10)
-check(any(t[0] == h[0] for t in g.things()) and 'HEALTH MAX' in g.msg(), f'health at 100%: pack stays, "{g.msg()}"')
+check(any(t[0] == h[0] for t in g.things()) and 'HEALTH MAX' in msg_soon(g), f'health at 100%: pack stays, "{g.msg()}"')
 g.poke(SYM['health'], 50); g.run(5)
 check(g.v('health') == 75 and not any(t[0] == h[0] for t in g.things()), f'health 50: taken, now {g.v("health")}')
 g.poke(AMMO, 99); a = [t for t in g.things() if t[1] == 0x80][0]; g.place(a[2], a[3]); g.run(10)
-check(any(t[0] == a[0] for t in g.things()) and 'AMMO MAX' in g.msg(), f'ammo 99: clip stays, "{g.msg()}"')
+check(any(t[0] == a[0] for t in g.things()) and 'AMMO MAX' in msg_soon(g), f'ammo 99: clip stays, "{g.msg()}"')
 g.poke(SYM['mins'], 5); g.poke(SYM['secs'], 0)
 tm = [t for t in g.things() if t[1] == 0x82][0]; g.place(tm[2], tm[3]); g.run(10)
-check(any(t[0] == tm[0] for t in g.things()) and 'TIME MAX' in g.msg(), f'time 5:00: hourglass stays, "{g.msg()}"')
+check(any(t[0] == tm[0] for t in g.things()) and 'TIME MAX' in msg_soon(g), f'time 5:00: hourglass stays, "{g.msg()}"')
 g.run(120)    # standing on it while the clock runs down: taken once there's room
 check(not any(t[0] == tm[0] for t in g.things()) and 'TIME +30' in g.msg(), f'once below the cap it is taken: "{g.msg()}"')
 g.close()
