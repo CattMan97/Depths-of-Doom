@@ -65,6 +65,8 @@ step with the code** (behaviour, memory map, "Room to grow", speed figures).
   ±127 bytes (use `jmp` past them).
 
 ## Git
+- Commit as `CattMan97 <344101925+CattMan97@users.noreply.github.com>` (Zach's private
+  GitHub address: never his personal email).
 - `main` on GitHub (CattMan97/Depths-of-Doom). Commit working, tested states with
   messages that say what changed for the player and why.
 - Tags mark versions given to Zach (`v1.0-osram` = the OS-RAM speed rework).
