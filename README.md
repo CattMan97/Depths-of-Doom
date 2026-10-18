@@ -70,7 +70,8 @@ can come back for it; standing on it says **AMMO MAX**, **HEALTH MAX** or **TIME
 ## Keycards and locked exits
 From level 3 the exit is **dark and locked**: the door panels, in the level's colour.
 The **keycard** is the same colour (gray, gold, violet or teal). One of the level's
-monsters, picked at random, carries it, and drops it where it dies; the level's clock
+monsters, picked at random, carries it, and drops it where it dies (and nothing else:
+every other monster drops ammo or health); the level's clock
 still includes time for a detour. The bottom line says **FIND THE EXIT DOOR!** until
 you've seen the exit, then **FIND THE <colour> KEYCARD, THEN EXIT!** for a few
 seconds, then **KILL THE MONSTERS TO GET THE KEYCARD!** (or the keycard line again once
@@ -190,7 +191,8 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
   entrance door looks like a locked exit, without the stripes.
 - Walls farther than about 5 tiles are drawn solid. Keycards and monsters are still in colour (they're sprites).
 - **Every level has a tint**, cycling gray, gold, gray, purple, gray, teal (`theme1` in
-  `depthsofdoom.s`). The whole view turns red when you're hurt.
+  `depthsofdoom.s`). Gold is hue 2: hue 1, the Atari's nominal gold, reads as yellow-green
+  on real NTSC sets. The whole view turns red when you're hurt.
 - **T** switches the textures off: plain shaded walls, a little faster to draw. The game
   runs in ticks of 1/20 s, so you and the monsters move at the same pace either way.
 
@@ -213,6 +215,11 @@ corridors around corners and attack when they reach you.
   are imps. Everything gets a little faster every level.
 - **Animation:** awake monsters walk with a two-frame step, rear up when they attack,
   flash white when hit, and collapse before their corpse fades.
+- **Drops:** every monster you kill leaves an **ammo clip or a health pack** (a coin
+  toss) where it fell: it collapses, lies there a moment, and about 1.6 s after the
+  kill its body turns into the pickup. These work like any other pickup (they wait
+  while that stat is full). The keycard's carrier is the exception: it drops the
+  keycard as it dies, and nothing else.
 - **Reaching the exit door:** you get +20 ammo (max 99) and +25% health (max 100%),
   then the next level is generated. The door is always as far from your start as the maze
   allows, measured by walking distance to its nearest open side.
@@ -425,7 +432,7 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$3BDD-$3BFD` | GOD MODE and level select messages (from the overlay) |
 | `$3C00-$3FFF` | BFS queue |
 | `$3F80-$3FEE` | Automap pickup dots (from the overlay; the BFS queue never reaches this far) |
-| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures (about 960 bytes free) |
+| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures (about 920 bytes free) |
 | `$7D80-$7FFC` | Start-up code, then (copied by the menu) level dressing: pickups per level, entrance, keycard lines, exit check, automap marks |
 | `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 140 bytes free) |
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |

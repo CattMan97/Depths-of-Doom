@@ -643,6 +643,31 @@ start:
         sta GRACTL
                                 ; (gcdone follows in INITA)
 .segment "CODE"
+; corpse: X = a dying monster, once a tick.  It falls (ETIM 80-68), lies
+;         there, and at DROPAT turns into an ammo clip or health pack, at
+;         random, where it lay.  The keycard's carrier (EHP = $FF) dropped
+;         its keycard as it died: its body just fades at 0.
+DROPAT  = 48                    ; (32 ticks, 1.6 s, after the kill)
+corpse: dec ETIM,x
+        beq @gone
+        lda ETIM,x
+        cmp #DROPAT
+        bne @x
+        lda EHP,x
+        bne @x
+        lda RANDOM
+        and #1
+        ora #PK_AMMO            ; PK_AMMO or PK_HEALTH
+        sta ETYP,x
+        lda #1
+        sta EST,x
+        lda #0
+        sta EWAKE,x             ; (not seen yet: off the automap)
+@x:     rts
+@gone:  lda #0
+        sta EST,x
+        rts
+
 gamecolours:
         lda #120
         sta HPOSM3
@@ -2662,8 +2687,9 @@ new_level:
         jsr drawtime
         jmp drawhud
 
-theme1: .byte $00, $10, $00, $60, $00, $A0    ; view hue: gray, gold, gray, lavender, gray, teal
-theme2: .byte $08, $18, $08, $68, $08, $A8    ; shaded
+theme1: .byte $00, $20, $00, $60, $00, $A0    ; view hue: gray, gold, gray, lavender, gray, teal
+theme2: .byte $08, $28, $08, $68, $08, $A8    ; shaded
+; (gold is hue 2: hue 1 reads as yellow-green on many NTSC sets)
 
 ; showlevel: the level's instruction on the message line
 showlevel:
@@ -4565,10 +4591,7 @@ enemy_ai:
 @loop:  lda EST,x
         cmp #2
         bne @nd
-        dec ETIM,x
-        bne @nx0
-        lda #0
-        sta EST,x
+        jsr corpse              ; (falls, lies there, may turn into a pickup)
 @nx0:   jmp @next
 @nd:    cmp #1
         bne @nx0
@@ -5753,9 +5776,12 @@ hurtslot:
         bcc @kill
         sta EHP,y
 @no:    rts
-@kill:  jsr mskill               ; death cry; the keycard's carrier drops it
-        lda #0
-        sta EHP,y
+@kill:  lda #0                  ; (a dead monster's hit points mark what its body
+        cpy keyby               ;   drops: 0 ammo or health (corpse), $FF nothing
+        bne @kd                 ;   more: the keycard's carrier)
+        lda #$FF
+@kd:    sta EHP,y
+        jsr mskill               ; death cry; the keycard's carrier drops it
         lda #2
         sta EST,y
         lda #80                 ; corpse stays ~4 seconds (ticks)

@@ -18,7 +18,6 @@ g.run(120)    # standing on it while the clock runs down: taken once there's roo
 check(not any(t[0] == tm[0] for t in g.things()) and 'TIME +30' in g.msg(), f'once below the cap it is taken: "{g.msg()}"')
 g.close()
 
-# ---- the keycard (level 4 of seed 0420: a locked exit)
 def kill(g, i):
     """Shoot monster i dead (one hit point, stood next to it, god mode on)."""
     M = g.map()
@@ -31,6 +30,31 @@ def kill(g, i):
         g.place(ex+dx, ey+dy, ang); g.run(2); g.run(6, trig=1); g.run(6)
     return g.m[EST+i] != 1
 
+# ---- every monster but the keycard's carrier leaves ammo or health behind
+g = Game(seed=5, tag='it3'); g.start('0420'); g.run(4, key=ord('g')); g.run(5)
+mons = [t[0] for t in g.monsters()]
+spots = {}
+for i in mons:
+    kill(g, i); spots[i] = (g.m[EXH+i], g.m[EYH+i], g.m[EXL+i], g.m[EYL+i])
+nx, ny, ang = g.exit_approach(); g.place(nx, ny, ang)  # well away from the bodies
+g.run(20)
+g.run(100)
+got = {i: (g.m[EST+i], g.m[ETYP+i]) for i in mons}
+check(all(e == 1 and t in (0x80, 0x81) for e, t in got.values()),
+      f'all {len(mons)} dead monsters turned into ammo or health: {[NAMES.get(t, t) for e, t in got.values()]}')
+check(all((g.m[EXH+i], g.m[EYH+i], g.m[EXL+i], g.m[EYL+i]) == spots[i] for i in mons), 'each where its monster fell')
+g.close()
+types = set()
+for seed in ('1111', '2468'):          # (both kinds turn up: it's a coin toss each time)
+    g = Game(seed=5, tag='it4'); g.start(seed); g.run(4, key=ord('g')); g.run(5)
+    ms = [t[0] for t in g.monsters()]
+    for i in ms: kill(g, i)
+    nx, ny, ang = g.exit_approach(); g.place(nx, ny, ang); g.run(120)
+    types |= {g.m[ETYP+i] for i in ms if g.m[EST+i] == 1}
+    g.close()
+check(types == {0x80, 0x81}, f'drops include both ammo and health ({sorted(NAMES.get(t, t) for t in types)})')
+
+# ---- the keycard (level 4 of seed 0420: a locked exit)
 g = Game(seed=5, tag='it2'); g.start('0420'); g.run(4, key=ord('g')); g.run(5); g.goto_level(4)
 check(g.v('level') == 4 and g.v('locked') == 1, 'level 4 (L level select): the exit is locked')
 check(g.msg() == 'FIND THE EXIT DOOR!', f'until the exit is seen: "{g.msg()}"')
@@ -48,6 +72,9 @@ check(kill(g, kb), 'killed the carrier')
 g.run(5)
 k = [t for t in g.things() if t[1] == 0x85]
 check(len(k) == 1 and g.v('keyby') == 255, 'the carrier drops the keycard')
+nx2, ny2, ang2 = g.exit_approach(); g.place(nx2, ny2, ang2); g.run(260)  # (its body: 80 ticks)
+check(g.m[EST+kb] == 0 and sum(1 for t in g.things() if t[1] == 0x85) == 1,
+      f'the carrier drops only the keycard (its body: state {g.m[EST+kb]}, type ${g.m[ETYP+kb]:02X})')
 g.place(k[0][2], k[0][3]); g.run(10)
 check(g.v('havekey') == 1 and 'KEYCARD ACCEPTED' in g.msg(), f'picked up: "{g.msg()}"')
 g.run(200)
