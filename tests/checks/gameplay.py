@@ -46,6 +46,8 @@ if check(imp is not None, 'found an imp with a straight line of fire'):
 g.run(4, key=ord('1')); g.run(6); check(g.v('weapon') == 0 and 'PISTOL' in g.hud(), 'key 1 switches to the pistol')
 g.run(4, key=ord('2')); g.run(6); check(g.v('weapon') == 1, 'key 2 switches back to the shotgun')
 check(g.finish_level(), 'level 2 -> 3')
+check(g.v('weapon') == 1 and g.v('guncol') == 0x22 and g.m[0x2C0] == 0x22,
+      f'the shotgun keeps its brown into the next level (colour ${g.m[0x2C0]:02X})')
 # ---- level 3: locked exit + keycard
 print('level 3:', g.msg())
 check(g.v('locked') == 1 and g.msg() == 'FIND THE EXIT DOOR!' and '---' in g.hud(),
@@ -78,5 +80,8 @@ a0 = g.m[AMMO]; g.run(60, trig=1); g.run(5); used = a0-g.m[AMMO]
 check(5 <= used <= 10, f'SMG is automatic: holding fire 1 s used {used} ammo')
 g.poke(AMMO, 0); g.run(2); g.run(10, trig=1); g.run(3)
 check('OUT OF AMMO' in g.msg(), f'out of ammo message: "{g.msg()}"')
+g.poke(AMMO, 50)
+check(g.finish_level() and g.v('weapon') == 2 and g.m[0x2C0] == 0x08,
+      f'level 4 -> 5: the SMG keeps its silver (colour ${g.m[0x2C0]:02X})')
 g.close()
 done()

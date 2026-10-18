@@ -185,7 +185,6 @@ C_PF1   = $0C           ; walls, lit side (light gray)
 C_PF2   = $08           ; walls, shaded side (gray)
 C_EXIT  = $44           ; exit door, solid red
 C_LOCKED = $00          ; locked exit, solid black
-C_GUN   = $00           ; the gun is solid black
 C_HAND  = $3A
 C_GUNHI = $0C
 C_FLASH = $1E
@@ -653,7 +652,8 @@ gamecolours:
         sta HPOSM1
         lda #132
         sta HPOSM0
-        lda #C_GUN
+        ldx weapon              ; the colour of the gun in hand (a new level
+        lda wcolor,x            ;   used to turn a shotgun or SMG black)
         sta PCOLR0
         sta guncol
         lda #C_HAND
