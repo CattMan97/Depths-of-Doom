@@ -56,4 +56,21 @@ check(g.v('health') < 100, f'an imp beside you hurts: health {g.v("health")}')
 check(thump > 0, 'the hit thump sounds')
 check(flash == 0, 'no gun flash when you are hit')
 g.close()
+
+# ---- a hit bigger than the health left: dead, and the meter shows 0%
+g = Game(seed=777, tag='in3'); g.start()
+e = next((t[0] for t in g.monsters() if t[1] == 0), None)
+g.poke(ETYP+e, 1)                      # a brute: 15% a bite
+M = g.map(); ex, ey = g.m[EXH+e], g.m[EYH+e]
+for dx, dy, ang in ((1, 0, 512), (-1, 0, 0), (0, 1, 768), (0, -1, 256)):
+    if M[(ey+dy)*32+ex+dx] == 0: break
+g.place(ex+dx, ey+dy, ang); g.poke(SYM['health'], 11)
+for k in range(60):
+    g.run(3)
+    if g.v('dead'): break
+g.run(10)
+hud = g.hud()
+check(g.v('dead') == 1 and g.v('health') == 0 and hud.rstrip().endswith(' 0%'),
+      f'a 15% bite at 11% health: dead, and the meter says so ("{hud.strip()}")')
+g.close()
 done()

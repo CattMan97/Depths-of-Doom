@@ -4906,10 +4906,11 @@ hurtme: sta tmp
         lda #0
 @hp:    sta health
         stx ei
+        jsr drawhud             ; (first: a fatal hit shows 0%, not what was left)
+        lda health
         bne @alive
         jsr player_dies
-@alive: jsr drawhud
-        ldx ei
+@alive: ldx ei
 @x:     rts
 
 ; spit: X = spitter, edx/edy = player - spitter.  Launch a fireball from one
