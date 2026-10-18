@@ -15,6 +15,10 @@ bigger mazes (23x23 tiles), and a heading tape and compass.
 - **Cartridge:** `DEPTHS_OF_DOOM.CAR` is a **128K switchable XEGS** image (.CAR type 35). It
   runs on the A8PicoCart and similar flash carts.
 
+**To play:** download `DEPTHS_OF_DOOM.CAR` from the repository's
+[Releases](https://github.com/CattMan97/Depths-of-Doom/releases) and put it on a flash cartridge, or run it in an emulator
+(Altirra or atari800) set up as a 64K XL/XE, NTSC. To build it yourself, see Building.
+
 ## How it boots
 1. The loader in the cartridge's fixed bank (bank 15, `$A000-$BFFF`) checks that there is
    RAM under the OS ROM, then switches the **OS ROM off for good**: it copies the OS's
@@ -25,10 +29,12 @@ bigger mazes (23x23 tiles), and a heading tape and compass.
 2. Image A copies image B from banks 2-3 to `$8000-$BFFF`. Each bank appears at `$8000`,
    which is also where it has to go, so it's staged through `$2000`, with the cartridge
    switched off between the two copies.
-3. The game switches the cartridge **off** (bit 7 of `$D5xx`) for good. It first turns off
-   the built-in BASIC (`PORTB` bit 1). With a cartridge in, the XL OS leaves BASIC enabled,
+3. The game switches the cartridge **off** (bit 7 of `$D5xx`). It first turns off the
+   built-in BASIC (`PORTB` bit 1). With a cartridge in, the XL OS leaves BASIC enabled,
    and once the cartridge goes away BASIC would appear at `$A000-$BFFF` instead of RAM.
-   From then on `$8000-$BFFF` is ordinary RAM.
+   From then on `$8000-$BFFF` is ordinary RAM; the cartridge comes back only for a
+   moment, with interrupts off, to fetch a music track, the tunnel picture, an overlay
+   or the ending.
 4. It sets up RESET (below) and opens the **main menu** (see below).
 
 **RESET restarts the game.** On an XL, RESET resets the chips: the OS ROM and BASIC come
@@ -85,22 +91,31 @@ locked exit, without the stripes, and never opens.
 | RAM under the OS ROM | about 2.8K free (`$CD00-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
 | RAM `$3A50-$3BDC`, `$BA00-$BB8C` | about 0.8K | (the old shared display lists) |
 | RAM `$B800-$B9FF` | about 0.1K free | things (24 slots, with page 4), weapon and maze state |
-| Cartridge bank 4 | about 5K free | the overlay (menu, wake-up scene, demo, game-over banner) |
-| Cartridge bank 5 | about 6.7K free | the ending's code |
+| Cartridge bank 4 | about 4K free | the overlay (menu, wake-up scene, demo, game-over banner) and resident extras |
+| Cartridge bank 5 | about 1.5K free | the ending's code (its area at `$1000` holds 2.75K) |
 | Cartridge banks 6-7 | about 11K free | the ending's pictures and walking frames |
 | Cartridge bank 8 | about 5.5K free | the tunnel picture |
 | Cartridge bank 9 | 4K free | music: 16 tracks, a page each |
-| Cartridge banks 11-14 | about 35K | sound effects, more graphics |
+| Cartridge banks 10-11 | about 3K free | the code for the RAM under the OS (13K) |
+| Cartridge banks 12-14 | 24K, empty | sound effects, more graphics, more levels |
 
-Image A holds everything the interrupts touch, because later stages will page cartridge
-banks back in over `$8000-$BFFF` to load content.
+Image A holds everything the interrupts touch, because cartridge banks are paged in
+over `$8000-$BFFF` (with interrupts off) to load music, the tunnel and the overlays.
+The 320K expansion's extended banks aren't used yet: they could hold more content on
+machines that have them, but the game must keep running on a plain 64K machine.
 
-## Roadmap
-1. **Platform port (done).**
-2. **Weapons, pickups, keys and locked doors (done).**
-3. **New enemy types and enemy animation (done).**
-4. **Textured walls and bigger 32x32 maps (done),** now drawn in GTIA mode 9: this build.
-5. **More music and sound.**
+## History
+1. **Platform port** from Mazes of Doom (stock 16K) to a 128K cartridge.
+2. **Weapons, pickups, keycards and locked doors.**
+3. **New monster types and animation.**
+4. **Textured walls and bigger 32x32 maps,** drawn in GTIA mode 9.
+5. **Story and structure:** the wake-up scene, 15 levels and the ending, the tunnel
+   between levels, braided mazes, the entrance door, keycards carried by monsters.
+6. **Music and sound:** 16 tracks, monster sounds, louder gunshots.
+7. **Speed:** the OS ROM switched off and its RAM used for the drawing code (about
+   10 to 14 fps); RESET restarts the game.
+
+Bug reports and ideas go in the repository's Issues.
 
 ## Controls (joystick, port 1)
 - **Up / Down**: walk forward / back
@@ -117,6 +132,8 @@ banks back in over `$8000-$BFFF` to load content.
 - **OPTION**: music on/off
 - **G** (keyboard, for testing): god mode on/off. No damage, ammo never runs down,
   and the clock holds. The bottom line says GOD MODE when it goes on.
+- **RESET**: restarts the game from the title (clears the high score, like turning the
+  machine off and on).
 - **L** (keyboard, for testing): level select. Everything holds; the stick up / down
   picks a level 1-15 (it wraps), fire goes there, any key cancels. You keep your
   health, weapons and score, and the clock gets that level's time on top.
@@ -154,8 +171,6 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the bottom
   died or **yellow** if the clock ran out (the monsters disappear), and the bottom line
   says why. **R** retries the same seed from level 1; **START** goes back to the main
   menu. Fire does nothing, so a stray press can't throw a run away.
-- Seeds from builds before this one give different mazes (the generator changed: more
-  loops and no long dead ends).
 
 ## Walls and screen
 - **The 3D view is in GTIA mode 9:** 80x64 chunky pixels in **16 shades of one hue**,
@@ -169,9 +184,10 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the bottom
 - **Each room has its own wall style**, picked at random from ten: bevelled plates,
   vents, pillars, framed tech panels with lights, bricks, pipes, light strips,
   grating, ribbed panels and circuit traces.
-- **The exit door** is a framed double door that **glows** (the brightest shade on
-  screen); while it's locked it's **dark**. The walls either side of it have bright
-  chevron stripes that scroll, so it stands out down a corridor.
+- **The exit door:** while it's locked it's a **dark** framed double door; once it's open
+  it's plain **glowing white**, the brightest shade on screen. The walls either side of
+  it have bright chevron stripes that scroll, so it stands out down a corridor. The
+  entrance door looks like a locked exit, without the stripes.
 - Walls farther than about 5 tiles are drawn solid. Keycards and monsters are still in colour (they're sprites).
 - **Every level has a tint**, cycling gray, gold, gray, purple, gray, teal (`theme1` in
   `depthsofdoom.s`). The whole view turns red when you're hurt.
@@ -210,7 +226,7 @@ The clock (right end of the top bar) counts **down**.
   the exit (about three times what walking straight there takes), plus 2 s per step
   of the keycard detour on locked levels.
 - **Time carries over:** whatever is left when you reach the exit stays on the clock.
-- **Each kill adds 10 s**, and an hourglass 10 s.
+- **Each kill adds 10 s**, and an hourglass 30 s.
 - **Maximum:** the clock never holds more than 5:00, so you can't bank an endless
   cushion. (A single level grants at most 240 s, plus at most 120 s for the key detour.)
 - **Under 30 s** the clock blinks. **Under 15 s** the music speeds up, and **under
@@ -253,8 +269,6 @@ levels 1-7 at 112 BPM and levels 8-15 at 128 BPM.
 The track playing sits in a 224-byte buffer in image A; the others wait in cartridge
 bank 9, one page each, and are copied in when a level starts (the title theme when the
 menu opens). The music still races when the clock is short. OPTION turns it off.
-`DEPTHS_OF_DOOM_music_preview.mp3` has 30 s of each track, recorded from the emulator
-(title first, then levels 1-15).
 
 ## Maze generation (6502, in RAM)
 The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
@@ -370,16 +384,23 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
   attacks, a falling death cry and the spitter's hiss. One monster sound plays at a
   time, the newest wins, and a gunshot takes the channel over (the monster's sound
   carries on silently and ends on time). The music is never touched. The code lives in
-  the OS's unused I/O control blocks (`$0340`). Hits, pickups,
-  the spitter's hiss and the music's drums share channel 2; the music's bass and lead
-  use channels 3 and 4. The music player and level clock run in the vertical-blank
+  the OS's unused I/O control blocks (`$0340`). Hits, pickups and the music's drums
+  share channel 2; the music's bass and lead use channels 3 and 4. The music player and level clock run in the vertical-blank
   interrupt, after the time-critical frame flip.
 
 ## Memory
 | Range | Use |
 |---|---|
 | `$0080-$00FC` | Zero page |
+| `$0100-$0176` | Tunnel colours, from the VBI (from the overlay) |
+| `$0178-$01C9` | Keycard drop (from the overlay) |
+| `$01CA-$01DF` | The RESET stub (switches the cartridge back on and cold-starts); the stack itself stays at `$01E0` and above (`tests/checks/system.py` checks it) |
+| `$0340-$03B5` | Monster sounds (from the overlay; the game never uses CIO) |
+| `$03B6-$03D8` | The trigger reader (from the overlay; IOCB 7's tail and the printer buffer) |
+| `$0400-$04EF` | Things, part 1: positions, state, type (24 slots; the OS's cassette buffer, unused) |
+| `$04F0-$04FD` | The 8x8 multiply (from the overlay) |
 | `$0500-$07FF` | Generated column writers (one per buffer, `$xx00-$xx63`: one `STA row,X` per row of the top half) |
+| `$05C8`, `$06C8`, `$07C8` | Track loader and keycard carrier (from the overlay), in the spare ends of the column-writer pages |
 | `$0800-$089F` | Automap display lists (two) |
 | `$08A0-$08FC` | Demo bot: route choosing (from the overlay) |
 | `$0900-$099F` | Per-column bookkeeping |
@@ -389,38 +410,30 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$0AB0-$0AF8` | Demo message and bot variables (from the overlay) |
 | `$0B00-$0BDD` | Sprite staging and variables |
 | `$0BDE-$0BE4` | Level select: last step (from the overlay) |
+| `$0BE5`, `$2BE5`, `$3FEF` | "Full" pickup messages and their routine (from the overlay) |
 | `$0C00-$0FFF` | Maze (32x32) |
 | `$1000`, `$2000`, `$3000` | Frame buffers (2560 bytes each). While the menu is up, the overlay runs from `$1000-$1648`; the first frame of a new run goes to `$2000` so the wake-up scene's code there survives |
 | `$1A00-$1AFA` | Demo bot (from the overlay; stays put while the demo draws into `$1000`) |
 | `$1B00-$1BC8` | Texture columns per ray, automap, music and score variables |
 | `$1BC9-$1BFD` | Level select (from the overlay) |
 | `$1C00-$1FFF` | Player/missile graphics (`$1C00-$1D27` is kept zero: the wake-up scene's closed eyelids point the display at it; `$1D28-$1D50` holds the braiding's wall counter, from the overlay) |
+| `$1D51-$1D7F` | Tunnel picture copier (reads cartridge bank 8) |
 | `$2A00-$2BFF` | Maze generator stack (first half of each page); the braiding code sits in the second halves (from the overlay) |
 | `$2C00-$2FFF` | Walking distances (BFS) |
 | `$3A00-$3A4F` | Top bar (two lines) |
 | `$3A50-$3BDC` | Free (was a game display list) |
 | `$3BDD-$3BFD` | GOD MODE and level select messages (from the overlay) |
 | `$3C00-$3FFF` | BFS queue |
-| `$0178-$01C9` | Keycard drop (from the overlay; the stack stays above `$01E0`) |
-| `$0BE5`, `$2BE5`, `$3FEF` | "Full" pickup messages and their routine (from the overlay) |
-| `$05C8`, `$06C8`, `$07C8` | Track loader and keycard carrier (from the overlay), in the spare ends of the column-writer pages |
-| `$0100-$0176` | Tunnel colours, from the VBI (from the overlay; the stack stays at `$01E0` and above: `tests/checks/system.py` checks it) |
-| `$0340-$03B5` | Monster sounds (from the overlay; the game never uses CIO) |
-| `$03B6-$03D8` | The trigger reader (from the overlay; IOCB 7's tail and the printer buffer) |
-| `$04F0-$04FD` | The 8x8 multiply (from the overlay) |
-| `$0400-$04EF` | Things, part 1: positions, state, type (24 slots; the OS's cassette buffer, unused) |
-| `$1D51-$1D7F` | Tunnel picture copier (reads cartridge bank 8) |
 | `$3F80-$3FEE` | Automap pickup dots (from the overlay; the BFS queue never reaches this far) |
-| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures (about 30 bytes free) |
+| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures (about 960 bytes free) |
 | `$7D80-$7FFC` | Start-up code, then (copied by the menu) level dressing: pickups per level, entrance, keycard lines, exit check, automap marks |
-| `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 100 bytes free) |
+| `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 140 bytes free) |
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |
 | `$B800-$B97E` | Things (part 2), weapon and maze variables |
 | `$B980-$B9F0` | Tunnel start and end (from the overlay, staged through `$2000`) |
 | `$BA00-$BB8C` | Free (was a game display list) |
 | `$BB90-$BBFA` | Game-over banner code (from the overlay) |
 | `$BC00-$BFFF` | Automap: walls seen (also key-placement scratch) |
-| `$01CA-$01DF` | The RESET stub (switches the cartridge back on and cold-starts) |
 | `$C000-$C5FF` | RAM under the OS ROM: the three game display lists (mirrored), 512 bytes each |
 | `$C600-$CCFF` | `bendt`: where each texture band ends, by scale |
 | `$D800-$DC2C` | `dpairs`: drawing the wall columns |
@@ -464,7 +477,23 @@ Needs `ca65`/`ld65` from cc65 and Python 3.
 - `loader.s` / `loader.cfg` build the fixed bank.
 - `mkcar.py` assembles the 16 banks into the .CAR file.
 
-`gentables.py` generates the lookup tables, HUD text, sprites and music. Imp stats
+| File | What it is |
+|---|---|
+| `depthsofdoom.s` | the game: engine, gameplay, VBI and DLIs (images A and B) |
+| `osram.s` | code and tables for the RAM under the OS ROM, the interrupt handlers |
+| `menu.s` | overlay 1: menu, wake-up scene, demo bot, cheats, game-over banner, braiding |
+| `items.s` | level dressing, monster sounds, the track loader and other resident extras |
+| `tunnel.s` | the tunnel between levels |
+| `ending.s` | overlay 2: the ending |
+| `loader.s` | the fixed bank: memory check, OS ROM off, start-up |
+| `gentables.py` | lookup tables, HUD text, sprites, messages (writes `data.s`) |
+| `music.py` | the 16 music tracks (used by `gentables.py`) |
+| `endart.py` | the ending's pictures and the tunnel picture |
+| `mkcar.py`, `build.sh`, `game.cfg`, `loader.cfg` | the build |
+| `tests/` | the test suite (see Testing) |
+| `tools/memtest/` | MEMTEST.CAR: RAM detection and test, an 8K cartridge |
+
+`gentables.py` generates the lookup tables, HUD text, sprites and music data. Imp stats
 (`E_HP`, `E_SPEED`, `DMG`, `ATKCOOL`) are constants at the top of `depthsofdoom.s`. Maze
 shape settings (loop count, room count, minimum imp distance) are in `genmaze` and
 `place_enemies`.
