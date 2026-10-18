@@ -69,6 +69,6 @@ step with the code** (behaviour, memory map, "Room to grow", speed figures).
   GitHub address: never his personal email).
 - `main` on GitHub (CattMan97/Depths-of-Doom). Commit working, tested states with
   messages that say what changed for the player and why.
-- Versions given to Zach are GitHub releases with the .CAR attached (`v1.0` = the
+- Versions given to Zach are GitHub releases with the .CAR attached (`v1.0.0-fullrelease` = the
   OS-RAM speed rework plus the test suite). Tag pushes are refused from Claude's cloud
   sessions, so Zach creates releases and tags on github.com.
