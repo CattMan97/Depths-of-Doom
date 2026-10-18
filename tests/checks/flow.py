@@ -23,6 +23,13 @@ check(g.v('dead') == 0, 'the run starts after the wake-up scene')
 g.close()
 g = Game(seed=5, tag='fl2'); g.run(100); g.run(3, trig=1); g.run(100); g.run(3, trig=1); g.run(30)
 check(g.v('dead') == 0 and g.msg() == 'FIND THE EXIT DOOR!', 'fire skips the wake-up scene')
+# ---- key and button names show in inverse video, and the whole line still prints
+g.run(4, key=ord('p')); g.run(10)
+line = g.m[0xA28:0xA50]
+inv = ''.join(chr((c & 127) + 32) for c in line if c & 128)
+check(g.msg() == 'PAUSED - PRESS P OR START' and inv == 'PSTART',
+      f'pause line "{g.msg()}", inverse: "{inv}"')
+g.run(4, key=ord('p')); g.run(10)
 g.close()
 
 # ---- demo: left alone, the menu plays a demo, then comes back

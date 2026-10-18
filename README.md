@@ -139,6 +139,9 @@ Bug reports and ideas go in the repository's Issues.
   picks a level 1-15 (it wraps), fire goes there, any key cancels. You keep your
   health, weapons and score, and the clock gets that level's time on top.
 
+On screen, key and button names (**R**, **START**, **FIRE**, **P**...) are shown in
+inverse video, so they stand out from the words around them.
+
 Every level is a **new maze**, built from a 4-digit **seed** shown on the top bar.
 - **Main menu:** the title (the DOOM drips blood: each letter grows drips that swell
   and let go of drops that fall down the screen), and two choices picked with the stick (up / down) and
@@ -366,6 +369,10 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
     walking distance from you, out to 32 steps. Only the tiles the last search reached
     are reset, so it stays cheap on the big maps. Each monster walks to the neighbouring
     tile one step closer (farther away it heads straight for you). Collision checks the imp's whole body, so imps can't cut corners.
+- **Pickups** are 16x16 one-colour pictures, pre-baked for each scale like the
+  monsters: an ammo box, a medkit, an hourglass, the shotgun, the SMG (drawn as a
+  MAC-10: boxy receiver, stubby barrel, the magazine down through the grip) and the
+  keycard.
 - **Other sprites:** Player 0 is the gun, player 1 the hand, and the four missiles,
   combined as a fifth player, are the muzzle flash.
 - **Shooting:** Hitscan uses the sprites' visible columns under the crosshair.

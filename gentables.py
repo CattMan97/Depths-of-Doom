@@ -126,23 +126,29 @@ fl = [max(1, min(11, int(round(1 + 10 * min(1.0, (4 * i + 2) / 40.0) ** 0.8)))) 
 table('fogl', fl)
 table('fogs', [max(1, v - 3) for v in fl])
 
-def screencode(s):
+def vis(s):                         # the text as shown: [..] marks inverse video
+    return s.replace('[', '').replace(']', '')
+def screencode(s):                  # (text in [brackets]: inverse, for keys and buttons)
     r = []
+    inv = 0
     for ch in s:
+        if ch in '[]':
+            inv = 0x80 if ch == '[' else 0
+            continue
         o = ord(ch)
         if 32 <= o < 96:
-            r.append(o - 32)
+            r.append((o - 32) | inv)
         elif 96 <= o < 128:
-            r.append(o)
+            r.append(o | inv)
         else:
             r.append(0)
     return r
 def msg(s):                         # message row text: left pad, characters, $FF
-    pad = (40 - len(s)) // 2
+    pad = (40 - len(vis(s))) // 2
     return [pad] + screencode(s) + [0xFF]
 def line40(s):
-    pad = (40 - len(s)) // 2
-    return (' ' * pad + s).ljust(40)[:40]
+    pad = (40 - len(vis(s))) // 2
+    return ' ' * pad + s + ' ' * (40 - pad - len(vis(s)))
 
 HUD1 = " PISTOL  50  KILLS 0/0  ---  HEALTH 100%"
 assert len(HUD1) == 40, len(HUD1)
@@ -156,8 +162,8 @@ table('msg_level', msg("FIND THE EXIT DOOR!"))
 out.append('.export LVLPOS')
 out.append('LVLPOS = 0')
 table('msg_empty', msg("OUT OF AMMO"))
-table('msg_died', msg("YOU DIED - R RETRY SEED, START MENU"))
-table('msg_tout', msg("OUT OF TIME - R RETRY, START MENU"))
+table('msg_died', msg("YOU DIED - [R] RETRY SEED, [START] MENU"))
+table('msg_tout', msg("OUT OF TIME - [R] RETRY, [START] MENU"))
 # top bar, two lines: score / level / high score, then seed / heading / clock
 TOP1 = " SCORE 000000    LEVEL 00    HIGH 000000"
 TOP2 = " SEED ----" + " " * 6 + "." * 9 + " " * 5 + "TIME 00:00"
@@ -391,21 +397,21 @@ PICKUPS = {          # solid shapes: they're drawn small and half height
     "................",
     "................",
     "................"],
- 'chaingun': [
+ 'chaingun': [                     # the SMG: a MAC-10, muzzle left (stubby barrel,
+    "................",           #   boxy receiver, cocking knob on top, trigger
+    "................",           #   guard, the magazine down through the grip)
     "................",
-    "................",
-    "................",
-    "................",
-    ".........######.",
-    "################",
-    "################",
-    "..........######",
-    "################",
-    "################",
-    ".........######.",
-    "................",
-    "................",
-    "................",
+    "........##......",
+    ".....#########..",
+    "..############..",
+    "..############..",
+    ".....#########..",
+    ".....#..#.###...",
+    ".....####.###...",
+    "..........###...",
+    "..........###...",
+    "..........###...",
+    "..........###...",
     "................",
     "................"],
  'key': [
@@ -447,12 +453,12 @@ table('msg_kill', msg("KILL THE MONSTERS TO GET THE KEYCARD!"))
 for name, text in (('msg_gotkey', "KEYCARD ACCEPTED - THE EXIT IS OPEN"),
                    ('msg_ammo', "AMMO +15"), ('msg_health', "HEALTH +25"),
                    ('msg_time', "TIME +30 SECONDS"),
-                   ('msg_shotgun', "SHOTGUN! (PRESS 2)"),
-                   ('msg_chain', "SMG! (PRESS 3)"),
+                   ('msg_shotgun', "SHOTGUN! (PRESS [2])"),
+                   ('msg_chain', "SMG! (PRESS [3])"),
                    ('msg_noweapon', "YOU DON'T HAVE THAT WEAPON"),
-                   ('msg_texon', "TEXTURES ON (T)"),
-                   ('msg_texoff', "TEXTURES OFF (T) - FASTER"),
-                   ('msg_pause', "PAUSED - PRESS P OR START")):
+                   ('msg_texon', "TEXTURES ON ([T])"),
+                   ('msg_texoff', "TEXTURES OFF ([T]) - FASTER"),
+                   ('msg_pause', "PAUSED - PRESS [P] OR [START]")):
     table(name, msg(text))
 out.append('.export AMMODIG')
 out.append(f'AMMODIG = {line40("AMMO +15").index("15")}')
@@ -781,8 +787,8 @@ table('mopt2', screencode(OPT2))
 table('mhint', screencode(line40("TYPE 4 DIGITS TO SET YOUR SEED")))
 HS = line40("HIGH SCORE  000000")
 table('mhs', screencode(HS))
-table('mhelp1', screencode(line40("STICK TO CHOOSE, FIRE TO PLAY")))
-table('mhelp2', screencode(line40("P PAUSE   SELECT MAP   T TEXTURES")))
+table('mhelp1', screencode(line40("STICK TO CHOOSE, [FIRE] TO PLAY")))
+table('mhelp2', screencode(line40("[P] PAUSE   [SELECT] MAP   [T] TEXTURES")))
 table('mcols', [0x0A, 0x0E, 0x00, 0x44, 0x00])  # COLOR0-4: DEPTHS gray, text white, DOOM red, black
 for name, pos in (('SEEDCOL', OPT2.index("0000")), ('HSCOL', HS.index("000000"))):
     out.append(f'.exportzp {name}')
@@ -810,12 +816,12 @@ seg("PKM2")                                    # ($3FEF)
 table('msg_hmax', msg("HEALTH MAX"))
 seg("OVLC4")
 table('msg_god', msg("GOD MODE"))
-LSEL = "LEVEL 00? STICK, FIRE"
+LSEL = "LEVEL 00? STICK, [FIRE]"
 table('msg_lsel', msg(LSEL))
 out.append('.exportzp LSCOL')
-out.append(f'LSCOL = {(40 - len(LSEL)) // 2 + LSEL.index("00")}')
+out.append(f'LSCOL = {(40 - len(vis(LSEL))) // 2 + vis(LSEL).index("00")}')
 seg("OVLB4")
-table('msg_demo', msg("DEMO - PRESS ANY KEY FOR THE MENU"))
+table('msg_demo', msg("DEMO - PRESS [ANY KEY] FOR THE MENU"))
 GL = {'G': [".###.", "#....", "#....", "#.###", "#...#", "#...#", ".###."],
       'A': [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
       'M': ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"],

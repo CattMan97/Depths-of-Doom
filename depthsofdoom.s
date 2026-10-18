@@ -2781,7 +2781,8 @@ putmsg: sta gptr
         tax
 @m:     iny
         lda (gptr),y
-        bmi @x
+        cmp #$FF                ; (the end: other bytes with bit 7 set are
+        beq @x                  ;   inverse characters, for key names)
         sta HUD+40,x
         inx
         bne @m
