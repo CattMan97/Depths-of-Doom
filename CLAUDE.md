@@ -65,6 +65,8 @@ step with the code** (behaviour, memory map, "Room to grow", speed figures).
   ±127 bytes (use `jmp` past them).
 
 ## Git
+- The project is GPL-3.0-or-later (`LICENSE`); keep anything added compatible (no code
+  copied from sources under other terms). Remixes are welcome under a new name.
 - Commit as `CattMan97 <344101925+CattMan97@users.noreply.github.com>` (Zach's private
   GitHub address: never his personal email).
 - `main` on GitHub (CattMan97/Depths-of-Doom). Commit working, tested states with

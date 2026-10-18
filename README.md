@@ -494,3 +494,17 @@ picture: an optimisation should report 0 differ), `profile.py` (cycles per routi
 `fps.py`. `tests/lib/dod.py` is the library they share (drive the emulator, read the
 game's variables by name).
 
+## License and remixing
+Depths of Doom is free software: copyright (C) 2026 CattMan97, released under the
+**GNU General Public License, version 3 or later** (see `LICENSE`). You may copy it,
+change it and share your changes, as long as what you share is under the same license
+with its source available.
+
+**Remixes are welcome.** Fork the repository and make it your own. Please give your
+version a new name, so it isn't mistaken for the original Depths of Doom; credit and a
+link back here are appreciated.
+
+The test harness (`tests/harness/`) builds on the atari800 emulator (GPL, version 2 or
+later), and the build uses cc65 (zlib license). Both are downloaded by `tests/setup.sh`
+rather than included here.
+
