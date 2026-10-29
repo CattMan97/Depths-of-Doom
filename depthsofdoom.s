@@ -663,6 +663,33 @@ arrows:
         .byte %00100000, %01110000, %10101000, %00100000, %00100000
         .byte %00111000, %00011000, %00101000, %01000000, %10000000
 .segment "CODE"
+; seenear: the 3x3 tiles around you (curl, curh) count as seen, so the
+;          automap shows the walls beside you even if you never looked at them
+seenear:sec
+        lda curl
+        sbc #33
+        sta gptr
+        lda curh
+        sbc #0
+        and #3
+        ora #>SEEN
+        sta gptr+1
+        ldx #2
+@r:     ldy #2
+        lda #1
+@c:     sta (gptr),y
+        dey
+        bpl @c
+        clc
+        lda gptr
+        adc #32
+        sta gptr
+        bcc @n
+        inc gptr+1
+@n:     dex
+        bpl @r
+        rts
+
 ; pickup_touch: X = pickup thing.  Collect it if you're within 0.4 tiles.
 pickup_touch:
         stx ei
@@ -4839,6 +4866,7 @@ enemy_ai:
         sta pty
         sta cy
         jsr xyidx
+        jsr seenear             ; (the walls around you go on the automap)
         lda curl
         sta bsl
         lda curh
@@ -6067,7 +6095,7 @@ wcost:  .byte 1, 1, 1           ; ammo per shot (each gun has its own)
 wcool:  .byte 12, 45, 7         ; frames (1/60 s) between shots
 wauto:  .byte 0, 0, 1           ; fires while held
 wflash: .byte 8, 13, 7          ; muzzle flash / shot sound length
-wcolor: .byte $00, $22, $06     ; gun colour: pistol black, shotgun brown, SMG dark silver
+wcolor: .byte $00, $30, $06     ; gun colour: pistol black, shotgun dark red-brown, SMG dark silver
 wkeys:  .byte $1F, $1E, $1A     ; keys 1, 2, 3
 keytxt: .byte $2B, $25, $39     ; "KEY"
 

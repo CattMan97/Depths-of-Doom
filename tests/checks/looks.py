@@ -1,6 +1,8 @@
 """How things look: the exit's stripes point at the door from both sides (the
-view of an exit, straight on, is mirror-symmetric as they scroll), and the
-automap's player arrow points the way you face (8 directions)."""
+view of an exit, straight on, is mirror-symmetric as they scroll); on the
+automap, the player arrow points the way you face (8 directions), the green
+entrance mark covers just the entrance's wall tile, and the walls around you
+show even if you never looked at them."""
 import os, sys; sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lib'))
 from dod import *
 from PIL import Image
@@ -51,5 +53,28 @@ for k in range(8):
             if (got == want).all(): found = True
     ok.append(found)
 check(all(ok), f'automap arrow for each of 8 facings (E, SE, S, SW, W, NW, N, NE): {ok}')
+g.close()
+
+# ---- the entrance mark: exactly its tile (a tile is 8 x 4 screen pixels)
+res = []
+for seed in ('0420', '2468', '5555'):
+    g = Game(seed=5, tag='lk3'); g.start(seed); g.run(20)
+    d = g.map().index(3); ex, ey = d & 31, d >> 5
+    g.poke(SYM['amap'], 1); g.place(g.m[0x83], g.m[0x85], 0); g.run(20)
+    im = np.asarray(Image.open(g.shot('lk3.ppm')).convert('RGB')).astype(int)
+    green = (im[:, :, 1] > im[:, :, 0] + 40) & (im[:, :, 1] > im[:, :, 2] + 40)
+    ys, xs = np.nonzero(green[20:180]); ys = ys + 20
+    x0, y0 = (16 + 4*ex) * 2 + 8, 4*ey + 32
+    res.append((xs.min(), xs.max()+1, ys.min(), ys.max()+1) == (x0, x0+8, y0, y0+4))
+    g.close()
+check(all(res), f'the green entrance mark covers just the entrance tile (3 seeds): {res}')
+
+# ---- the tiles around you count as seen when you step into them
+g = Game(seed=5, tag='lk4'); g.start('0420'); g.run(20)
+M = g.map(); S = g.m[0xBC00:0xC000]
+t = next(i for i in range(1024) if M[i] == 0 and all(S[i+d] == 0 for d in (-33, -32, -31, -1, 0, 1, 31, 32, 33)))
+g.place(t & 31, t >> 5, 0); g.run(10)
+S = g.m[0xBC00:0xC000]
+check(all(S[t+d] for d in (-33, -32, -31, -1, 0, 1, 31, 32, 33)), 'stepping into an unseen spot puts the 8 tiles around it on the automap')
 g.close()
 done()

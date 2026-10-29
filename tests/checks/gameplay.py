@@ -53,8 +53,8 @@ g.run(4, key=ord('1')); g.run(6)
 check(g.v('weapon') == 0 and 'PISTOL' in g.hud() and g.m[AMMO] == g.m[AMMOP], f'key 1 switches to the pistol, and its own ammo shows ("{g.hud().strip()}")')
 g.run(4, key=ord('2')); g.run(6); check(g.v('weapon') == 1, 'key 2 switches back to the shotgun')
 check(g.finish_level(), 'level 2 -> 3')
-check(g.v('weapon') == 1 and g.v('guncol') == 0x22 and g.m[0x2C0] == 0x22,
-      f'the shotgun keeps its brown into the next level (colour ${g.m[0x2C0]:02X})')
+check(g.v('weapon') == 1 and g.v('guncol') == 0x30 and g.m[0x2C0] == 0x30,
+      f'the shotgun keeps its dark red-brown into the next level (colour ${g.m[0x2C0]:02X})')
 # ---- level 3: locked exit + keycard
 print('level 3:', g.msg())
 check(g.v('locked') == 1 and g.msg() == 'FIND THE EXIT DOOR!' and '---' in g.hud(),

@@ -469,7 +469,7 @@ seg("RODATA2")
 out.append('.export pklo, pkhi')
 out.append('pklo: .byte ' + ','.join(f'<pk_{n}' for n in PKORDER))
 out.append('pkhi: .byte ' + ','.join(f'>pk_{n}' for n in PKORDER))
-table('pkcol', [0xC8, 0x44, 0x2E, 0x24, 0x06, 0x86, 0x00])   # super ammo green, health red, hourglass yellow,
+table('pkcol', [0xC8, 0x44, 0x2E, 0x30, 0x06, 0x86, 0x00])   # super ammo green, health red, hourglass yellow,
                                                              # shotgun, SMG, key, pistol ammo black
 
 table('msg_kill', msg("KILL THE MONSTERS TO GET THE KEYCARD!"))

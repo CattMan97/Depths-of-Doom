@@ -273,8 +273,8 @@ mapextra:
         asl
         adc #64                 ; HPOS = 48 + 16 + 4 * x
         sta HPOSM0
-        lda #$57                ; missile 0 four colour clocks wide
-        sta SIZEM
+        lda #$55                ; missile 0 double width: its two bits are four
+        sta SIZEM               ;   colour clocks, one tile (quad width was two)
         lda #C_MENTR
         sta COLOR3
         lda enty

@@ -54,7 +54,8 @@ cartridge back on and cold-starts. (Like a power-cycle, it clears the high score
 in your hand. You start with 50 pistol rounds. Picking up a weapon you don't have
 switches to it with its first load (10 shells for the shotgun, 20 rounds for the SMG).
 In your hand the pistol is black, the shotgun (a trench gun with its bayonet fixed)
-brown and the SMG dark silver. A weapon you don't have yet lies somewhere in each level
+dark red-brown (`$30`: the gold levels' walls are the old brown's hue) and the SMG dark
+silver. A weapon you don't have yet lies somewhere in each level
 until you find it.
 
 ## Pickups
@@ -102,7 +103,7 @@ locked exit, without the stripes, and never opens.
 ## Room to grow
 | Space | Size | Planned use |
 |---|---|---|
-| Image A `$4000-$7FFF` | about 0.7K free (plus the start-up area, reused) | engine core and everything interrupts run |
+| Image A `$4000-$7FFF` | about 0.65K free (plus the start-up area, reused) | engine core and everything interrupts run |
 | Image B `$8000-$B7FF` | about 0.4K free | gameplay code |
 | RAM under the OS ROM | about 3.7K free (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
 | RAM `$3A50-$3BDC`, `$BA08-$BB8C` | about 0.8K | (the old shared display lists) |
@@ -269,8 +270,9 @@ The tuning constants are at the top of `depthsofdoom.s`: `T_LEVEL`, `T_KILL`, `T
 ## Automap
 SELECT switches the view to a top-down map (in 4-colour mode D, so it keeps its colours) of the whole 32x32 area (each tile is 4x2
 pixels). Only walls you've actually seen are shown:
-every wall a ray hits gets marked. Walls are red, the exit door is yellow (once you've
-seen it), the entrance is green, and you're a white arrow, turning about its middle to
+every wall a ray hits gets marked, and so do the tiles right around you (each time you
+step into a new tile), so the walls beside you show even if you never looked at them. Walls are red, the exit door is yellow (once you've
+seen it), the entrance is green (on its wall tile), and you're a white arrow, turning about its middle to
 point the way you face (8 directions). Pickups you've seen on screen are small dots: yellow, or white for
 the keycard. (The green mark is missile 0, recoloured while the map is up, since mode D
 has only four colours.) A
@@ -472,7 +474,7 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$3BDD-$3BFD` | GOD MODE and level select messages (from the overlay) |
 | `$3C00-$3FFF` | BFS queue |
 | `$3F80-$3FEE` | Automap pickup dots (from the overlay; the BFS queue never reaches this far) |
-| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures, pickups (about 690 bytes free) |
+| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures, pickups (about 650 bytes free) |
 | `$7D80-$7FFC` | Start-up code, then (copied by the menu) level dressing: pickups per level, entrance, keycard lines, exit check, automap marks |
 | `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 410 bytes free) |
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |
@@ -564,7 +566,7 @@ built-in Altirra OS), driven by Python scripts:
 | `flow` | the wake-up scene and skipping it, the demo, the ending |
 | `input_sound` | fire taps and latency, being hurt, the music stopping for the tunnel |
 | `system` | the stack page, the OS ROM off, RESET, 16K / 128K / 320K machines |
-| `looks` | the exit stripes point at the door from both sides (all four ways an exit faces), the automap arrow's 8 directions |
+| `looks` | the exit stripes point at the door from both sides (all four ways an exit faces); automap: the arrow's 8 directions, the entrance mark on its tile, the walls around you |
 
 `tests/tools/` has the speed tools: `bench.py` (100 fixed views, monsters frozen: the
 number quoted under Speed), `compare.py` (the same 32 views from two builds, picture by
