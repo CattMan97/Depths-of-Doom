@@ -516,7 +516,7 @@ hzs:    cmp #HAZID+16
 ;   id ktid at shade Y.  bbhi/bblo: bb = bt | the shorter ray's (kstid,
 ;   shade Y).  bbfill: bb = bt | A.  All mark the runs for rebuilding.
 .macro TPTR tid
-        lda tid                 ; gptr = tdel + id * 8 (tdel4 + id * 4: 4 bands)
+        lda tid                 ; gptr = tdel + id * 4 (4 bands)
         sty tbase
         ldy #0
         sty gptr+1
@@ -524,19 +524,10 @@ hzs:    cmp #HAZID+16
         rol gptr+1
         asl
         rol gptr+1
-.if NBAND = 8
-        asl
-        rol gptr+1
         adc #<tdel              ; (C clear: the rol out of a 0)
         sta gptr
         lda gptr+1
         adc #>tdel
-.else
-        adc #<tdel4
-        sta gptr
-        lda gptr+1
-        adc #>tdel4
-.endif
         sta gptr+1
         lda #$FE                ; (a new bt: bb is stale too)
 .endmacro

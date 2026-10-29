@@ -84,11 +84,10 @@ XITVBV  = xitvbv        ; (osram.s: the OS ROM is off)
 ; ---------------- RAM layout (16K machine: $0000-$3FFF)
 CW0     = $0500         ; generated column writers, one page per buffer
 .ifndef VROWS
-VROWS   = 16            ; rows drawn above the horizon (32: full detail)
+VROWS   = 16            ; rows drawn above the horizon, 4 scanlines each (32: 2 each)
 .endif
-.ifndef NBAND
-NBAND   = 4             ; texture bands per half wall (8: full detail)
-.endif
+NBAND   = 4             ; texture bands per half wall (tdel and bendt are built for 4;
+                        ;   8 bands: the deprecated-v1 branch)
 CW1     = $0600
 CW2     = $0700
 MDLA    = $0800         ; automap display lists (mode D), two in turn
@@ -251,7 +250,7 @@ ATKCOOL = 20            ; ticks between enemy hits
 .import msg_died, hudline3, msg_tout
 .import texlo, texhi, msg_texon, msg_texoff, msg_pause, compass
 .importzp AMMODIG
-.import qcos, tdel, tdel4, nibl, nibr
+.import qcos, tdel, nibl, nibr
 .importzp NID
 .import wpnname, gungfx3, handq3, pklo, pkhi, pkcol
 .import msg_kill, msg_gotkey, msg_ammo, msg_health, msg_time, msg_shotgun

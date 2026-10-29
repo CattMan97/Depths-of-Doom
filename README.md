@@ -88,9 +88,9 @@ locked exit, without the stripes, and never opens.
 ## Room to grow
 | Space | Size | Planned use |
 |---|---|---|
-| Image A `$4000-$7FFF` | about 0.9K free (plus the start-up area, reused) | engine core and everything interrupts run |
+| Image A `$4000-$7FFF` | about 1.7K free (plus the start-up area, reused) | engine core and everything interrupts run |
 | Image B `$8000-$B7FF` | about 140 bytes free | gameplay code |
-| RAM under the OS ROM | about 2.8K free (`$CD00-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
+| RAM under the OS ROM | about 3.7K free (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
 | RAM `$3A50-$3BDC`, `$BA00-$BB8C` | about 0.8K | (the old shared display lists) |
 | RAM `$B800-$B9FF` | about 0.1K free | things (24 slots, with page 4), weapon and maze state |
 | Cartridge bank 4 | about 4K free | the overlay (menu, wake-up scene, demo, game-over banner) and resident extras |
@@ -116,6 +116,9 @@ machines that have them, but the game must keep running on a plain 64K machine.
 6. **Music and sound:** 16 tracks, monster sounds, louder gunshots.
 7. **Speed:** the OS ROM switched off and its RAM used for the drawing code (about
    10 to 14 fps); RESET restarts the game.
+8. **Taller pixels:** the view's pixels are 4 scanlines tall instead of 2, and wall
+   textures are shaded in 4 bands instead of 8 (about 14 to 15.6 fps). The earlier
+   look (2-scanline pixels, 8 bands) is kept on the `deprecated-v1` branch.
 
 Bug reports and ideas go in the repository's Issues.
 
@@ -178,10 +181,11 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
   menu. Fire does nothing, so a stray press can't throw a run away.
 
 ## Walls and screen
-- **The 3D view is in GTIA mode 9:** 80x64 chunky pixels in **16 shades of one hue**,
+- **The 3D view is in GTIA mode 9:** 80x32 chunky pixels (each 4 scanlines tall) in
+  **16 shades of one hue**,
   instead of 4 colours. Walls fade into the dark with distance, and the ceiling and
   floor are gradients from light gray at the screen edges to black at the horizon.
-- **Every wall is textured** (16 columns by 8 rows per half wall, mirrored below the
+- **Every wall is textured** (16 columns by 4 bands per half wall, mirrored below the
   horizon), as darker and lighter shades of the wall's own shade. Lit faces are a few
   shades lighter than shaded ones, and everything darkens with distance.
 - **Corridor walls** have a dark trim at the top and bottom and a dark rail at eye
@@ -306,14 +310,18 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 ## How it works
 - **Display:** GTIA mode 9: ANTIC mode F lines, 80 pixels across, each byte two
   4-bit pixels whose value is the **luminance**; the background register holds the hue.
-  The frame buffer is 64 rows of 40 bytes, and the display list shows every row twice
+  Each frame buffer has room for 64 rows of 40 bytes; the view uses 16 of them
+  (`VROWS`) above the horizon, and the display list shows every row four times
   (128 scanlines, an LMS on every line). It's **triple-buffered**, with a fixed display
   list for each buffer (in the RAM under the OS), so a finished frame only needs its
   list's address. The VBI flips to it and swaps in its sprites at the same moment, so
   the main loop never waits for vblank.
   - **The bottom half is the top half's mirror,** row for row (the walls, the textures,
     the ceiling and floor are all symmetric about the horizon), so the display lists
-    show rows 32-63 as rows 31-0 and only the top half is ever drawn. The GAME OVER
+    show the bottom half as the top half's rows in reverse, and only the top half is
+    ever drawn. (The drawing code works in a 32-row space for the top half; `rowhi`,
+    `mul3` and the display lists map it onto the 16 real rows, so `VROWS = 32` still
+    builds the old 2-scanline view.) The GAME OVER
     banner isn't symmetric: game over copies the top half down and shows the frame
     through a plain list.
 - **Interrupts:** a display-list interrupt turns GTIA mode 9 on (PRIOR) and sets the
@@ -322,7 +330,7 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
   actually on screen.
 - **Shading:** each ray's wall shade comes from its distance (a fog table), with lit
   and shaded faces a few steps apart. Textures are stored as brightness offsets from
-  that shade, clamped to 0-15. The ceiling and floor are 8 bands of 4 rows each,
+  that shade, clamped to 0-15. The ceiling and floor are 8 bands (8 scanlines each),
   written as runs split at the band edges.
 - **Walls:** Grid DDA in 8.8 fixed point, using quarter-square multiplies and 1/cos
   tables over a 1024-step circle, with fisheye correction. Each ray stores its
@@ -348,8 +356,10 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
     crosses an 8-row boundary.
   - **Textures:** each ray works out where it hit along the wall (one multiply) and
     picks one of 16 texture columns (corridor walls are the same in every column, so
-    they skip this). The top half of the wall is split into 8 bands; band k ends at
-    row 32 - s + k s / 8 (a table, `bendt`: a page per band, by scale). Each band's shade is the ray's shade
+    they skip this). The top half of the wall is split into 4 bands; band k ends at
+    row 32 - s + k s / 4 (a table, `bendt`: a page per band, by scale). The textures are
+    drawn 8 rows tall and each band takes the stronger of its two rows (`tdel`), so thin
+    trims and rails don't vanish. Each band's shade is the ray's shade
     plus the texture's offset, through a 32-entry table that clamps it. Neighbouring bands with the same value
     are merged into one run, and a pair whose rays have the same textures and shades
     as the last pair reuses its runs.
@@ -387,13 +397,17 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 - **A still view isn't redrawn:** when you haven't moved or turned (and no exit
   stripes are scrolling on screen, nothing in the maze changed), the frame on screen
   stays and only the sprites are new, up to 20 times a second.
-- **Speed:** about 14 fps on average with textures on (worst views about 7.5), against
-  about 10 before the OS ROM was switched off (NTSC, in emulation; the benchmark is 100
+- **Speed:** about 15.6 fps on average with textures on (worst views about 9.5),
+  against about 14 with 2-scanline pixels and 8 bands, and about 10 before the OS ROM
+  was switched off (NTSC, in emulation; the benchmark is 100
   views on two seeds, with the monsters frozen). The gains: the drawing code rewritten
   for the RAM under the OS (about +2.5 fps), only the top half drawn (+1.2), the ray
   interpolation unrolled (+1), the band-end table (+0.5), the fixed display lists
-  (+0.3). ANTIC takes about half the machine's cycles in this mode: it fetches every
-  row twice.
+  (+0.3), taller pixels (+0.5) and 4 texture bands instead of 8 (+1). ANTIC still
+  fetches every scanline (each row four times); showing each row with one fetch, by
+  changing VSCROL from a display-list interrupt on every row, was measured: at best
+  +2 fps if the fetches were free, but the interrupts would take most of that back, and
+  the write has to land in a window of a few cycles that real machines may not match.
 - **Sound:** Gunshots use POKEY channel 1 (loud: volume (length + 15) / 2, so they cut
   through the music), as do the tunnel's rush, the ending's footsteps and the monsters:
   a buzzing growl when one first notices you (or is shot awake), a noise swipe when it
@@ -451,7 +465,7 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$BB90-$BBFA` | Game-over banner code (from the overlay) |
 | `$BC00-$BFFF` | Automap: walls seen (also key-placement scratch) |
 | `$C000-$C5FF` | RAM under the OS ROM: the three game display lists (mirrored), 512 bytes each |
-| `$C600-$CCFF` | `bendt`: where each texture band ends, by scale |
+| `$C600-$C8FF` | `bendt`: where each texture band ends, by scale |
 | `$D800-$DC2C` | `dpairs`: drawing the wall columns |
 | `$E000-$E3FF` | The character set (copied from the OS ROM) |
 | `$E400-$F5E4` | Ray interpolation (unrolled), game ticks, the still-view check, NMI / IRQ handlers, RESET setup, game-over helpers |

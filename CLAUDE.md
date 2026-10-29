@@ -51,7 +51,7 @@ step with the code** (behaviour, memory map, "Room to grow", speed figures).
 - **RESET** on an XL resets the chips (the OS ROM comes back); the game survives it
   through `DOSINI` and the stub, which switches the cartridge back on and cold-starts.
 - **Memory is nearly full** in images A and B. Before adding code, check "Room to grow"
-  in the README; the RAM under the OS (`$CD00-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) is
+  in the README; the RAM under the OS (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) is
   the main free space for engine code. Overlay code (bank 4) is copied into spare
   corners of RAM by the menu (`xcptab`/`cptab` in `menu.s`). Record every new placement
   in the README memory table and `game.cfg`.
@@ -74,3 +74,5 @@ step with the code** (behaviour, memory map, "Room to grow", speed figures).
 - Versions given to Zach are GitHub releases with the .CAR attached (`v1.0.0-fullrelease` = the
   OS-RAM speed rework plus the test suite). Tag pushes are refused from Claude's cloud
   sessions, so Zach creates releases and tags on github.com.
+- `deprecated-v1` is the old look (2-scanline pixels, 8 texture bands), kept for
+  reference: don't develop on it. `main` has taller pixels and 4 bands.
