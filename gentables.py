@@ -416,6 +416,24 @@ PICKUPS = {          # solid shapes: they're drawn small and half height
     "..........###...",
     "................",
     "................"],
+ 'pistol': [                       # pistol ammo: a black semi-auto, muzzle left
+    "................",
+    "................",
+    "................",
+    "##########..##..",
+    "##############..",
+    "##########..####",
+    "........##..####",
+    "........########",
+    "............####",
+    "............####",
+    "............####",
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    ],
  'key': [
     "................",
     "................",
@@ -434,8 +452,9 @@ PICKUPS = {          # solid shapes: they're drawn small and half height
     "................",
     "................"],
 }
-PKORDER = ['ammo', 'health', 'time', 'shotgun', 'chaingun', 'key']
+PKORDER = ['ammo', 'health', 'time', 'shotgun', 'chaingun', 'key', 'pistol']
 for name in PKORDER:
+    if name == 'pistol': seg("RODATA")     # (image B is full: this one goes in image A)
     pic = [r[:16].ljust(16, '.') for r in PICKUPS[name]]
     assert len(pic) == 16, name
     baked = []
@@ -446,14 +465,16 @@ for name in PKORDER:
                 v = (v << 1) | (u < 16 and r[u] == '#')
             baked.append(v)
     table('pk_' + name, baked)
+seg("RODATA2")
 out.append('.export pklo, pkhi')
 out.append('pklo: .byte ' + ','.join(f'<pk_{n}' for n in PKORDER))
 out.append('pkhi: .byte ' + ','.join(f'>pk_{n}' for n in PKORDER))
-table('pkcol', [0xC8, 0x44, 0x2E, 0x24, 0x08, 0x86])   # ammo green, health red, hourglass yellow, shotgun, SMG, key
+table('pkcol', [0xC8, 0x44, 0x2E, 0x24, 0x06, 0x86, 0x00])   # super ammo green, health red, hourglass yellow,
+                                                             # shotgun, SMG, key, pistol ammo black
 
 table('msg_kill', msg("KILL THE MONSTERS TO GET THE KEYCARD!"))
 for name, text in (('msg_gotkey', "KEYCARD ACCEPTED - THE EXIT IS OPEN"),
-                   ('msg_ammo', "AMMO +15"), ('msg_health', "HEALTH +25"),
+                   ('msg_health', "HEALTH +25"),
                    ('msg_time', "TIME +30 SECONDS"),
                    ('msg_shotgun', "SHOTGUN! (PRESS [2])"),
                    ('msg_chain', "SMG! (PRESS [3])"),
@@ -462,8 +483,14 @@ for name, text in (('msg_gotkey', "KEYCARD ACCEPTED - THE EXIT IS OPEN"),
                    ('msg_texoff', "TEXTURES OFF ([T]) - FASTER"),
                    ('msg_pause', "PAUSED - PRESS [P] OR [START]")):
     table(name, msg(text))
-out.append('.export AMMODIG')
-out.append(f'AMMODIG = {line40("AMMO +15").index("15")}')
+seg("RODATA")                       # (image A: room there)
+table('msg_super', msg("SUPER AMMO - EVERY GUN FULL"))
+for name, dig, text in (('msg_pammo', 'PAMDIG', "PISTOL AMMO +15"), ('msg_sammo', 'SAMDIG', "SHOTGUN SHELLS +15"),
+                        ('msg_mammo', 'MAMDIG', "SMG AMMO +15")):
+    table(name, msg(text))
+    out.append(f'.export {dig}')
+    out.append(f'{dig} = {line40(text).index("15")}')
+seg("RODATA2")
 
 
 # ---------------------------------------------------------------- stage 3: monster frames
@@ -743,6 +770,10 @@ TEXTURES = {
 }
 ORDER = ('hull', 'door', 'plates', 'vents', 'pillars', 'tech', 'bricks', 'hazard',
          'pipes', 'lights', 'grate', 'ribs', 'circuit')
+# hazardm: the stripes mirrored, for the stripe tiles on the exit's west and north
+#   sides (texture columns run with x or y), so every stripe points at the door
+TEXTURES['hazardm'] = [r[::-1] for r in TEXTURES['hazard']]
+ORDER += ('hazardm',)
 TCOLS, TROWS = 16, 8
 for nm in ORDER:
     assert len(TEXTURES[nm]) == TROWS and all(len(r) == TCOLS for r in TEXTURES[nm]), nm

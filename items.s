@@ -17,7 +17,8 @@ MAPDOT  = $14                   ; automap: a pickup (two yellow pixels)
 MAPKEY  = $3C                   ; automap: the keycard (two white pixels)
 
 .segment "RA1"
-; placepk: ammo 2 + (level-1)/3, health and time 1 + (level-1)/7 each
+; placepk: ammo 2 + (level-1)/3 (a gun's, or 1 in 4 super ammo), health and
+;          time 1 + (level-1)/7 each
 placepk:lda #3
         ldx #2
         ldy #PK_AMMO
@@ -41,6 +42,7 @@ pkn:    sta pdiv
         inc pcnt
         bcs @d
 @l:     lda ptyp
+        jsr pktype              ; (ammo: which gun's, or super ammo)
         jsr addpk
         dec pcnt
         bne @l

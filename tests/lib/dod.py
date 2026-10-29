@@ -43,16 +43,19 @@ def _syms(src, seg, base):
     return d
 
 SYM = _syms(_src, 'ZEROPAGE', 0x80)
-for _seg, _base in (('BSS', 0xB80), ('BSS2', 0x1B00), ('BSS3', 0xB800), ('BSS4', 0x400)):
+for _seg, _base in (('BSS', 0xB80), ('BSS2', 0x1B00), ('BSS3', 0xB800), ('BSS4', 0x400), ('BSS5', 0xBA00)):
     SYM.update(_syms(_src, _seg, _base))
 SYM.update(_syms(_isrc, 'BSSR', 0xB780))
 EXL, EXH, EYL, EYH, EST, EHP, EPAIN, EWAKE, ETIM, ETYP = \
     [SYM[k] for k in 'EXL EXH EYL EYH EST EHP EPAIN EWAKE ETIM ETYP'.split()]
 NTH = MAXTH
-# fixed addresses: zero page $80 frame counter, $81 ammo, $82-$87 player
+# fixed addresses: zero page $80 frame counter, $81 ammo (the gun in hand's: a copy,
+# made when the bottom bar is drawn; each gun's own is at AMMOP+gun), $82-$87 player
 # x (frac, whole), y (frac, whole), angle; the map at $0C00 (32x32 tiles)
 FCOUNT, AMMO = 0x80, 0x81
-NAMES = {0x80: 'ammo', 0x81: 'health', 0x82: 'time', 0x83: 'shotgun', 0x84: 'chaingun', 0x85: 'key'}
+AMMOP = SYM['ammop']        # pistol, shotgun, SMG
+NAMES = {0x80: 'super ammo', 0x81: 'health', 0x82: 'time', 0x83: 'shotgun', 0x84: 'chaingun', 0x85: 'key',
+         0x86: 'pistol ammo'}
 
 # ---------------------------------------------------------------- checks
 _ok = True
@@ -123,7 +126,7 @@ class Game:
         """Live things: (slot, type, tile x, tile y).  Monsters < $80, pickups $80+."""
         return [(i, self.m[ETYP+i], self.m[EXH+i], self.m[EYH+i]) for i in range(NTH) if self.m[EST+i] == 1]
     def place(self, x, y, ang=0, xl=128, yl=128):
-        """Put the player at tile (x, y), angle 0-1023 (0 = east, 256 = north)."""
+        """Put the player at tile (x, y), angle 0-1023 (0 = east, 256 = south: y grows downwards)."""
         for a, v in ((0x83, x), (0x82, xl), (0x85, y), (0x84, yl), (0x86, ang & 255), (0x87, ang >> 8)):
             self.poke(a, v)
     def msg(self): return ''.join(chr((c & 127) + 32) for c in self.m[0xA28:0xA50]).strip()

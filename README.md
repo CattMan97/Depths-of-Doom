@@ -46,24 +46,37 @@ cartridge back on and cold-starts. (Like a power-cycle, it clears the high score
 ## Weapons
 | Weapon | Found | Ammo per shot | Damage | Fire |
 |---|---|---|---|---|
-| Pistol | at the start | 1 | 1 (an imp takes 3) | about 4 shots/s at most |
-| Shotgun | from level 2 | 2 | 3 (kills an imp) | slow, and hits every imp near the crosshair |
-| SMG | from level 4 | 1 | 1 | automatic while held, about 6 shots/s |
+| Pistol | at the start | 1 round | 1 (an imp takes 3) | about 4 shots/s at most |
+| Shotgun | from level 2 | 1 shell | 3 (kills an imp) | slow, and hits every imp near the crosshair |
+| SMG | from level 4 | 1 round | 1 | automatic while held, about 6 shots/s |
 
-Picking up a weapon switches to it and gives some ammo (+10 for the shotgun, +20 for the
-SMG). In your hand the pistol is black, the shotgun (a trench gun with its bayonet
-fixed) brown and the SMG silver. A weapon you don't have yet lies somewhere in each level until you find it.
+**Each gun has its own ammo** (at most 99 each); the bottom bar shows the ammo of the gun
+in your hand. You start with 50 pistol rounds. Picking up a weapon you don't have
+switches to it with its first load (10 shells for the shotgun, 20 rounds for the SMG).
+In your hand the pistol is black, the shotgun (a trench gun with its bayonet fixed)
+brown and the SMG dark silver. A weapon you don't have yet lies somewhere in each level
+until you find it.
 
 ## Pickups
-Green **ammo** clips (+16 at first, growing with monster toughness: +18 on level 4,
-+30 on level 10; max 99), red **health** packs (+25%, max 100%) and yellow
-**hourglasses** (+30 s on the clock). Walk over them to collect. A pickup stays
-where it is while that stat is full (99 ammo, 100% health, 5:00 on the clock), so you
-can come back for it; standing on it says **AMMO MAX**, **HEALTH MAX** or **TIME MAX**. Later levels have more:
+- **Ammo for one gun** looks like that gun: a small **black pistol** (pistol rounds), the
+  **shotgun** (shells) or the **SMG** (rounds). Pistol and SMG ammo is +16 at first,
+  growing with monster toughness (+18 on level 4, +30 on level 10); shells are half
+  that. If you don't have that gun yet, picking it up gives you the gun (switching to
+  it, with its first load), just as the weapon pickup does. A gun's ammo is only placed
+  from the level that gun can first be found on (the shotgun from level 2, the SMG from
+  level 4).
+- **Super ammo** is the green ammo box: it fills every gun to 99. One ammo pickup in four
+  is super ammo, a third as many as the guns' own ammo.
+- Red **health** packs (+25%, max 100%) and yellow **hourglasses** (+30 s on the clock).
+
+Walk over them to collect. A pickup stays where it is while that stat is full (that gun
+at 99 rounds, every gun you have at 99 for super ammo, 100% health, 5:00 on the clock),
+so you can come back for it; standing on it says **AMMO MAX**, **HEALTH MAX** or
+**TIME MAX**. Later levels have more:
 
 | Level | 1-3 | 4-6 | 7 | 8-9 | 10-12 | 13-14 | 15 |
 |---|---|---|---|---|---|---|---|
-| Ammo | 2 | 3 | 4 | 4 | 5 | 6 | 6 |
+| Ammo (each a gun's, or super ammo) | 2 | 3 | 4 | 4 | 5 | 6 | 6 |
 | Health, hourglasses (each) | 1 | 1 | 1 | 2 | 2 | 2 | 3 |
 
 (Ammo: 2 + (level - 1) / 3. Health and time: 1 + (level - 1) / 7.)
@@ -79,7 +92,8 @@ seconds, then **KILL THE MONSTERS TO GET THE KEYCARD!** (or the keycard line aga
 it has been dropped). Once you have it, the bottom bar shows `KEY`, the exit opens
 (**KEYCARD ACCEPTED - THE EXIT IS OPEN**), and the line goes back to finding the exit.
 
-An open exit is plain glowing white, the same white as the chevron stripes beside it.
+An open exit is plain glowing white, the same white as the chevron stripes beside it,
+which point at it (and scroll towards it) from both sides.
 
 Every level also has an **entrance**: the door you came in by, on the wall behind you
 at the start (or beside you, if you start in a straight corridor). It looks like a
@@ -88,10 +102,10 @@ locked exit, without the stripes, and never opens.
 ## Room to grow
 | Space | Size | Planned use |
 |---|---|---|
-| Image A `$4000-$7FFF` | about 1.7K free (plus the start-up area, reused) | engine core and everything interrupts run |
-| Image B `$8000-$B7FF` | about 140 bytes free | gameplay code |
+| Image A `$4000-$7FFF` | about 0.7K free (plus the start-up area, reused) | engine core and everything interrupts run |
+| Image B `$8000-$B7FF` | about 0.4K free | gameplay code |
 | RAM under the OS ROM | about 3.7K free (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
-| RAM `$3A50-$3BDC`, `$BA00-$BB8C` | about 0.8K | (the old shared display lists) |
+| RAM `$3A50-$3BDC`, `$BA08-$BB8C` | about 0.8K | (the old shared display lists) |
 | RAM `$B800-$B9FF` | about 0.1K free | things (24 slots, with page 4), weapon and maze state |
 | Cartridge bank 4 | about 4K free | the overlay (menu, wake-up scene, demo, game-over banner) and resident extras |
 | Cartridge bank 5 | about 1.5K free | the ending's code (its area at `$1000` holds 2.75K) |
@@ -125,7 +139,7 @@ Bug reports and ideas go in the repository's Issues.
 ## Controls (joystick, port 1)
 - **Up / Down**: walk forward / back
 - **Left / Right**: turn. Starts slow for fine aiming and speeds up while held.
-- **Fire**: shoot. You start with 50 rounds; all weapons share the ammo. The trigger is
+- **Fire**: shoot. You start with 50 pistol rounds; each gun has its own ammo. The trigger is
   read every 1/60 s and each press is kept until it fires, so quick taps are never
   lost, and a tap during the gun's recovery fires as soon as it's ready. The game
   checks for a shot every game tick (1/20 s) and again between casting the rays and
@@ -195,7 +209,8 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
   grating, ribbed panels and circuit traces.
 - **The exit door:** while it's locked it's a **dark** framed double door; once it's open
   it's plain **glowing white**, the brightest shade on screen. The walls either side of
-  it have bright chevron stripes that scroll, so it stands out down a corridor. The
+  it have bright chevron stripes, pointing at the door from both sides and scrolling
+  towards it, so it stands out down a corridor. The
   entrance door looks like a locked exit, without the stripes.
 - Walls farther than about 5 tiles are drawn solid. Keycards and monsters are still in colour (they're sprites).
 - **Every level has a tint**, cycling gray, gold, gray, purple, gray, teal (`theme1` in
@@ -223,12 +238,13 @@ corridors around corners and attack when they reach you.
   are imps. Everything gets a little faster every level.
 - **Animation:** awake monsters walk with a two-frame step, rear up when they attack,
   flash white when hit, and collapse before their corpse fades.
-- **Drops:** every monster you kill leaves an **ammo clip or a health pack** (a coin
+- **Drops:** every monster you kill leaves **ammo for one of your guns or a health pack** (a coin
   toss) where it fell: it collapses, lies there a moment, and about 1.6 s after the
   kill its body turns into the pickup. These work like any other pickup (they wait
   while that stat is full). The keycard's carrier is the exception: it drops the
   keycard as it dies, and nothing else.
-- **Reaching the exit door:** you get +20 ammo (max 99) and +25% health (max 100%),
+- **Reaching the exit door:** each gun you have gets ammo (+20 pistol and SMG rounds,
+  +10 shells; max 99) and you get +25% health (max 100%),
   then the next level is generated. The door is always as far from your start as the maze
   allows, measured by walking distance to its nearest open side.
 - **Game over:** at 0% health or when the clock hits 0:00. R retries the seed, START
@@ -254,8 +270,8 @@ The tuning constants are at the top of `depthsofdoom.s`: `T_LEVEL`, `T_KILL`, `T
 SELECT switches the view to a top-down map (in 4-colour mode D, so it keeps its colours) of the whole 32x32 area (each tile is 4x2
 pixels). Only walls you've actually seen are shown:
 every wall a ray hits gets marked. Walls are red, the exit door is yellow (once you've
-seen it), the entrance is green, and you're the white block, with a yellow nose showing
-which way you face. Pickups you've seen on screen are small dots: yellow, or white for
+seen it), the entrance is green, and you're a white arrow, turning about its middle to
+point the way you face (8 directions). Pickups you've seen on screen are small dots: yellow, or white for
 the keycard. (The green mark is missile 0, recoloured while the map is up, since mode D
 has only four colours.) A
 compass rose (north up) sits in the right margin. The game keeps running while the
@@ -381,7 +397,8 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
     are reset, so it stays cheap on the big maps. Each monster walks to the neighbouring
     tile one step closer (farther away it heads straight for you). Collision checks the imp's whole body, so imps can't cut corners.
 - **Pickups** are 16x16 one-colour pictures, pre-baked for each scale like the
-  monsters: an ammo box, a medkit, an hourglass, the shotgun (a Remington Model 10 trench
+  monsters: an ammo box (super ammo), a medkit, an hourglass, a pistol (pistol ammo:
+  `pk_pistol` is in image A, as image B is full), the shotgun (a Remington Model 10 trench
   gun: vented heat shield, pump, bayonet), the SMG (drawn as a
   MAC-10: boxy receiver, stubby barrel, the magazine down through the grip) and the
   keycard.
@@ -397,7 +414,7 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 - **A still view isn't redrawn:** when you haven't moved or turned (and no exit
   stripes are scrolling on screen, nothing in the maze changed), the frame on screen
   stays and only the sprites are new, up to 20 times a second.
-- **Speed:** about 15.6 fps on average with textures on (worst views about 9.5),
+- **Speed:** about 15.5 fps on average with textures on (worst views about 9.5),
   against about 14 with 2-scanline pixels and 8 bands, and about 10 before the OS ROM
   was switched off (NTSC, in emulation; the benchmark is 100
   views on two seeds, with the monsters frozen). The gains: the drawing code rewritten
@@ -455,13 +472,14 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$3BDD-$3BFD` | GOD MODE and level select messages (from the overlay) |
 | `$3C00-$3FFF` | BFS queue |
 | `$3F80-$3FEE` | Automap pickup dots (from the overlay; the BFS queue never reaches this far) |
-| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures (about 920 bytes free) |
+| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures, pickups (about 690 bytes free) |
 | `$7D80-$7FFC` | Start-up code, then (copied by the menu) level dressing: pickups per level, entrance, keycard lines, exit check, automap marks |
-| `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 140 bytes free) |
+| `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 410 bytes free) |
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |
 | `$B800-$B97E` | Things (part 2), weapon and maze variables |
 | `$B980-$B9F0` | Tunnel start and end (from the overlay, staged through `$2000`) |
-| `$BA00-$BB8C` | Free (was a game display list) |
+| `$BA00-$BA07` | Each gun's ammo, the mirrored exit-stripe tiles (`BSS5`) |
+| `$BA08-$BB8C` | Free (was a game display list) |
 | `$BB90-$BBFA` | Game-over banner code (from the overlay) |
 | `$BC00-$BFFF` | Automap: walls seen (also key-placement scratch) |
 | `$C000-$C5FF` | RAM under the OS ROM: the three game display lists (mirrored), 512 bytes each |
@@ -538,7 +556,7 @@ built-in Altirra OS), driven by Python scripts:
 
 | Check | Covers |
 |---|---|
-| `gameplay` | levels 1-4: contents, pickups, the three weapons, the locked exit and keycard |
+| `gameplay` | levels 1-4: contents, pickups, the three weapons and their own ammo, super ammo, the locked exit and keycard |
 | `items` | pickups refused at full stats (HEALTH/AMMO/TIME MAX), the keycard carrier and its level lines |
 | `monsters` | fireballs, brute speed, animation, death and score |
 | `mazes` | all 15 levels on three seeds: one exit and entrance, reachable, dead ends at most 4 tiles |
@@ -546,6 +564,7 @@ built-in Altirra OS), driven by Python scripts:
 | `flow` | the wake-up scene and skipping it, the demo, the ending |
 | `input_sound` | fire taps and latency, being hurt, the music stopping for the tunnel |
 | `system` | the stack page, the OS ROM off, RESET, 16K / 128K / 320K machines |
+| `looks` | the exit stripes point at the door from both sides (all four ways an exit faces), the automap arrow's 8 directions |
 
 `tests/tools/` has the speed tools: `bench.py` (100 fixed views, monsters frozen: the
 number quoted under Speed), `compare.py` (the same 32 views from two builds, picture by

@@ -16,8 +16,10 @@ h = [t for t in g.things() if t[1] == 0x81][0]; g.place(h[2], h[3]); g.run(10)
 check(any(t[0] == h[0] for t in g.things()) and 'HEALTH MAX' in msg_soon(g), f'health at 100%: pack stays, "{g.msg()}"')
 g.poke(SYM['health'], 50); g.run(5)
 check(g.v('health') == 75 and not any(t[0] == h[0] for t in g.things()), f'health 50: taken, now {g.v("health")}')
-g.poke(AMMO, 99); a = [t for t in g.things() if t[1] == 0x80][0]; g.place(a[2], a[3]); g.run(10)
-check(any(t[0] == a[0] for t in g.things()) and 'AMMO MAX' in msg_soon(g), f'ammo 99: clip stays, "{g.msg()}"')
+g.poke(AMMOP, 99); a = [t for t in g.things() if t[1] == 0x86][0]; g.place(a[2], a[3]); g.run(10)
+check(any(t[0] == a[0] for t in g.things()) and 'AMMO MAX' in msg_soon(g), f'pistol ammo 99: pistol ammo stays, "{g.msg()}"')
+a = [t for t in g.things() if t[1] == 0x80][0]; g.place(a[2], a[3]); g.run(10)
+check(any(t[0] == a[0] for t in g.things()) and 'AMMO MAX' in msg_soon(g), f'every gun you have at 99: super ammo stays, "{g.msg()}"')
 g.poke(SYM['mins'], 5); g.poke(SYM['secs'], 0)
 tm = [t for t in g.things() if t[1] == 0x82][0]; g.place(tm[2], tm[3]); g.run(10)
 check(any(t[0] == tm[0] for t in g.things()) and 'TIME MAX' in msg_soon(g), f'time 5:00: hourglass stays, "{g.msg()}"')
@@ -37,7 +39,7 @@ def kill(g, i):
         g.place(ex+dx, ey+dy, ang); g.run(2); g.run(6, trig=1); g.run(6)
     return g.m[EST+i] != 1
 
-# ---- every monster but the keycard's carrier leaves ammo or health behind
+# ---- every monster but the keycard's carrier leaves health or ammo for a gun you have
 g = Game(seed=5, tag='it3'); g.start('0420'); g.run(4, key=ord('g')); g.run(5)
 mons = [t[0] for t in g.monsters()]
 spots = {}
@@ -47,8 +49,8 @@ nx, ny, ang = g.exit_approach(); g.place(nx, ny, ang)  # well away from the bodi
 g.run(20)
 g.run(100)
 got = {i: (g.m[EST+i], g.m[ETYP+i]) for i in mons}
-check(all(e == 1 and t in (0x80, 0x81) for e, t in got.values()),
-      f'all {len(mons)} dead monsters turned into ammo or health: {[NAMES.get(t, t) for e, t in got.values()]}')
+check(all(e == 1 and t in (0x86, 0x81) for e, t in got.values()),
+      f'all {len(mons)} dead monsters turned into pistol ammo (the only gun yet) or health: {[NAMES.get(t, t) for e, t in got.values()]}')
 check(all((g.m[EXH+i], g.m[EYH+i], g.m[EXL+i], g.m[EYL+i]) == spots[i] for i in mons), 'each where its monster fell')
 g.close()
 types = set()
@@ -59,7 +61,7 @@ for seed in ('1111', '2468'):          # (both kinds turn up: it's a coin toss e
     nx, ny, ang = g.exit_approach(); g.place(nx, ny, ang); g.run(120)
     types |= {g.m[ETYP+i] for i in ms if g.m[EST+i] == 1}
     g.close()
-check(types == {0x80, 0x81}, f'drops include both ammo and health ({sorted(NAMES.get(t, t) for t in types)})')
+check(types == {0x86, 0x81}, f'drops include both ammo and health ({sorted(NAMES.get(t, t) for t in types)})')
 
 # ---- the keycard (level 4 of seed 0420: a locked exit)
 g = Game(seed=5, tag='it2'); g.start('0420'); g.run(4, key=ord('g')); g.run(5); g.goto_level(4)

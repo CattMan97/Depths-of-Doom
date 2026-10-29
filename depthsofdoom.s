@@ -168,6 +168,7 @@ PK_TIME = $82
 PK_SHOTGUN = $83
 PK_CHAIN = $84
 PK_KEY  = $85
+PK_PISTOL = $86        ; pistol ammo (PK_SHOTGUN / PK_CHAIN: that gun, or its ammo)
 KEYLEVEL   = 3          ; exit locked from this level on
 SHOTLEVEL  = 2          ; shotgun lying around from here, until you have it
 CHAINLEVEL = 4
@@ -230,6 +231,7 @@ C_DEAD  = $44
 
 LODS    = 10            ; walls at least this scale are textured
 HAZID   = 112           ; texture id of the exit's stripes (texbase, tile 10)
+HZMID   = 208           ; ... mirrored (west / north of the exit: they point at it)
 E_HP    = 3             ; pistol shots to kill an imp
 .ifndef E_SPEED
 E_SPEED = 8             ; 1/256 tile per tick, level 1
@@ -249,11 +251,12 @@ ATKCOOL = 20            ; ticks between enemy hits
 .import impb, corpseb, handq
 .import msg_died, hudline3, msg_tout
 .import texlo, texhi, msg_texon, msg_texoff, msg_pause, compass
-.importzp AMMODIG
+.importzp PAMDIG, SAMDIG, MAMDIG
 .import qcos, tdel, nibl, nibr
 .importzp NID
 .import wpnname, gungfx3, handq3, pklo, pkhi, pkcol
-.import msg_kill, msg_gotkey, msg_ammo, msg_health, msg_time, msg_shotgun
+.import msg_kill, msg_gotkey, msg_health, msg_time, msg_shotgun, msg_super
+.import msg_pammo, msg_sammo, msg_mammo
 .import msg_chain, msg_noweapon
 .importzp WPNPOS, KEYPOS, LVLPOSK
 .importzp SCOREPOS, HIGHPOS, TIMEPOS, SEEDPOS, LVLTPOS, DIRPOS
@@ -647,10 +650,227 @@ start:
         lda #3
         sta GRACTL
                                 ; (gcdone follows in INITA)
+.segment "RODATA"
+; arrows: the automap's player marker, 5 rows of 5 pixels (bits 7-3) for each
+;         of 8 directions: east, south-east, south ... north-east (y is down)
+arrows:
+        .byte %00100000, %00010000, %11111000, %00010000, %00100000
+        .byte %10000000, %01000000, %00101000, %00011000, %00111000
+        .byte %00100000, %00100000, %10101000, %01110000, %00100000
+        .byte %00001000, %00010000, %10100000, %11000000, %11100000
+        .byte %00100000, %01000000, %11111000, %01000000, %00100000
+        .byte %11100000, %11000000, %10100000, %00010000, %00001000
+        .byte %00100000, %01110000, %10101000, %00100000, %00100000
+        .byte %00111000, %00011000, %00101000, %01000000, %10000000
 .segment "CODE"
+; pickup_touch: X = pickup thing.  Collect it if you're within 0.4 tiles.
+pickup_touch:
+        stx ei
+        sec
+        lda px
+        sbc EXL,x
+        tay
+        lda px+1
+        sbc EXH,x
+        jsr close
+        bcc @far
+        ldx ei
+        sec
+        lda py
+        sbc EYL,x
+        tay
+        lda py+1
+        sbc EYH,x
+        jsr close
+        bcs @take
+@far:   ldx ei
+        rts
+@take:  ldx ei                   ; (nothing is taken while that stat is full)
+        ldy ETYP,x
+        cpy #PK_AMMO
+        bne @t1
+        ldx #2                  ; super ammo: full while every gun you have
+@sf:    lda owned,x             ;   is at 99
+        beq @sn
+        lda ammop,x
+        cmp #99
+        bcc @t3
+@sn:    dex
+        bpl @sf
+        bmi @fu
+@t1:    cpy #PK_HEALTH
+        bne @t2
+        lda health
+        cmp #100
+        bcs @fu
+        bcc @t3
+@t2:    cpy #PK_TIME
+        bne @t4
+        lda mins
+        cmp #T_CAPM
+        bcs @fu
+        bcc @t3
+@t4:    lda pkwpn-PK_AMMO,y     ; a gun's ammo: full while you have that gun
+        bmi @t3                 ;   and it's at 99 (the keycard: never)
+        tax
+        lda owned,x
+        beq @t3
+        lda ammop,x
+        cmp #99
+        bcc @t3
+        ldy #PK_AMMO            ; (AMMO MAX)
+@fu:    jmp pkfull              ; full: say so, leave it there
+@t3:    ldx ei
+        lda #0
+        sta EST,x
+        lda #4                  ; blip
+        sta thump
+        lda ETYP,x
+        cmp #PK_AMMO
+        bne @n1
+        lda #99                 ; super ammo: every gun full
+        sta ammop
+        sta ammop+1
+        sta ammop+2
+        lda #<msg_super
+        ldy #>msg_super
+        bne @msg
+@n1:    cmp #PK_HEALTH
+        bne @n2
+        clc
+        lda health
+        adc #HEALTH_PK
+        cmp #101
+        bcc @h
+        lda #100
+@h:     sta health
+        lda #<msg_health
+        ldy #>msg_health
+        bne @msg
+@n2:    cmp #PK_TIME
+        bne @n3
+        clc
+        lda tadm
+        adc #TIME_PK
+        sta tadm
+        lda #<msg_time
+        ldy #>msg_time
+        bne @msg
+@n3:    cmp #PK_KEY
+        bne @gun
+        lda #1                  ; the key: the exit opens
+        sta havekey
+        lda #2
+        jsr setdoor
+        lda #<msg_gotkey
+        ldy #>msg_gotkey
+@msg:   jsr showmsg
+        jsr drawhud
+        ldx ei
+        rts
+@gun:   tay                     ; a gun (or its ammo: the same picture)
+        ldx pkwpn-PK_AMMO,y
+        stx pkw
+        lda owned,x
+        bne @amm
+        lda #1                  ; not yours yet: it is now, in your hand,
+        sta owned,x             ;   with its first load
+        stx weapon
+        lda wfirst,x
+        jsr addammo
+        jsr setgun
+        ldx pkw
+        lda wmsgl,x
+        ldy wmsgh,x
+        bne @msg
+@amm:   lda thp                 ; ammo: 10 + 2 x this level's imp toughness
+        asl                     ;   (shotgun shells: half that)
+        adc #AMMO_PK-5
+        cpx #1
+        bne @af
+        lsr
+@af:    sta dtmp
+        jsr addammo
+        ldx pkw
+        lda wamsl,x
+        ldy wamsh,x
+        jsr showmsg
+        lda dtmp                ; the amount, into the message
+        jsr div10
+        ldy pkw
+        pha
+        lda wdig,y
+        tay
+        pla
+        cpx #$10                ; (one digit: no leading 0)
+        bne @d2
+        sta a:HUD+40,y
+        lda #0
+        sta a:HUD+40+1,y
+        beq @dd
+@d2:    sta a:HUD+40+1,y
+        txa
+        sta a:HUD+40,y
+@dd:    jsr drawhud
+        ldx ei
+        rts
+
+; addammo: gun X's ammo += A, at most 99.  Keeps X.
+addammo:clc
+        adc ammop,x
+        cmp #100
+        bcc @a
+        lda #99
+@a:     sta ammop,x
+        rts
+
+; exitammo: reaching the exit: ammo for each gun you have
+exitammo:
+        ldx #2
+@l:     lda owned,x
+        beq @n
+        lda wexit,x
+        jsr addammo
+@n:     dex
+        bpl @l
+        rts
+
+; pktype: A = a pickup type for placepk.  Ammo (PK_AMMO) becomes super ammo
+;         1 time in 4, else ammo for a gun found on this level or earlier.
+pktype: cmp #PK_AMMO
+        bne @x
+        jsr rnd
+        cmp #$40                ; (the top bits: the low ones lean)
+        bcc @s
+@w:     jsr rnd
+        and #3
+        cmp #3
+        bcs @w
+        tay
+        lda level
+        cmp wlvl,y
+        bcc @w
+        lda wpk,y
+        rts
+@s:     lda #PK_AMMO
+@x:     rts
+
+; by gun (pistol, shotgun, SMG)
+wpk:    .byte PK_PISTOL, PK_SHOTGUN, PK_CHAIN   ; its ammo pickup
+wlvl:   .byte 0, SHOTLEVEL, CHAINLEVEL          ; its ammo is placed from this level
+wfirst: .byte 0, 10, 20                         ; ammo with the gun when you find it
+wexit:  .byte 20, 10, 20                        ; ammo for reaching the exit
+wmsgl:  .byte <msg_shotgun, <msg_shotgun, <msg_chain
+wmsgh:  .byte >msg_shotgun, >msg_shotgun, >msg_chain
+wamsl:  .byte <msg_pammo, <msg_sammo, <msg_mammo
+wamsh:  .byte >msg_pammo, >msg_sammo, >msg_mammo
+wdig:   .byte PAMDIG, SAMDIG, MAMDIG            ; where the amount goes in those
+; pkwpn: by pickup type - PK_AMMO: the gun it's for ($FF: not a gun's)
+pkwpn:  .byte $FF, $FF, $FF, 1, 2, $FF, 0
+
 ; corpse: X = a dying monster, once a tick.  It falls (ETIM 80-68), lies
-;         there, and at DROPAT turns into an ammo clip or health pack, at
-;         random, where it lay.  The keycard's carrier (EHP = $FF) dropped
+;         there, and at DROPAT turns into a health pack or ammo for one of
+;         your guns, at random, where it lay.  The keycard's carrier (EHP = $FF) dropped
 ;         its keycard as it died: its body just fades at 0.
 DROPAT  = 48                    ; (32 ticks, 1.6 s, after the kill)
 corpse: dec ETIM,x
@@ -660,10 +880,20 @@ corpse: dec ETIM,x
         bne @x
         lda EHP,x
         bne @x
-        lda RANDOM
+        lda RANDOM              ; health, or ammo for a gun you have
         and #1
-        ora #PK_AMMO            ; PK_AMMO or PK_HEALTH
-        sta ETYP,x
+        bne @h
+@w:     lda RANDOM
+        and #3
+        cmp #3
+        bcs @w
+        tay
+        lda owned,y
+        beq @w
+        lda wpk,y
+        bne @st
+@h:     lda #PK_HEALTH
+@st:    sta ETYP,x
         lda #1
         sta EST,x
         lda #0
@@ -1657,13 +1887,13 @@ firechk:lda amap                ; no shooting while the map is up (and no
         jsr readfire
         bne @done
         ldx weapon
-        lda ammo
+        lda ammop,x
         cmp wcost,x
         bcc @empty
         sbc wcost,x
         ldy god                 ; (god mode: ammo never runs down)
         bne @ga
-        sta ammo
+        sta ammop,x
 @ga:
         lda wcool,x
         sta fcool
@@ -2186,9 +2416,28 @@ castray:
         lsr
         lsr
         lsr
-        clc
+        ldy tmp2                ; the exit's stripes: mirrored on the tiles west
+        cpy #HAZID              ;   and north of it, so they point at the door
+        bne @ua
+        tay
+        lda hitid
+        and #$7E
+        ldx hitlo
+        cpx mirl
+        bne @m2
+        cmp mirp
+        beq @mr
+@m2:    cpx mirl+1
+        bne @mn
+        cmp mirp+1
+        bne @mn
+@mr:    tya
+        ora #HZMID
+        bne @st
+@mn:    tya
+@ua:    clc
         adc tmp2
-        ldx rayi
+@st:    ldx rayi
         sta TID,x
         rts
 
@@ -2462,14 +2711,16 @@ reset_game:                     ; new game: level 1, full health and ammo
         sta lsec
         lda tadm                ; drop any pending time
         sta tadv
-        lda #50
-        sta ammo
+        lda #50                 ; 50 pistol rounds, nothing for the others
+        sta ammop
         lda #100
         sta health
         sta owned               ; (pistol)
         lda #0
         sta owned+1
         sta owned+2
+        sta ammop+1
+        sta ammop+2
         sta weapon
         sta msgt
         sta trigl               ; (no shot saved from the game-over screen)
@@ -2554,14 +2805,8 @@ do_win:                         ; also entered from the exit door
         bcc @more
         jmp endgame
 @more:  jsr tunnel              ; the zooming tunnel to the next level
-        ; ---- reward for finishing: +20 ammo (max 99), +25 health (max 100)
-        clc
-        lda ammo
-        adc #20
-        cmp #100
-        bcc @a
-        lda #99
-@a:     sta ammo
+        ; ---- reward for finishing: ammo for each gun you have (max 99), +25 health
+        jsr exitammo
         clc
         lda health
         adc #25
@@ -3254,7 +3499,17 @@ genmaze:
         ldy #3
 @hz:    sty dir
         jsr step
-        jsr ldmap
+        lda dir                 ; west (1) and north (3): note the tile for
+        lsr                     ;   the mirrored stripes
+        bcc @he
+        tax
+        lda nl
+        sta mirl,x
+        lda nh
+        ora #>map
+        asl
+        sta mirp,x
+@he:    jsr ldmap
         beq @hn
         cmp #2
         beq @hn
@@ -4220,7 +4475,7 @@ drawmap:
         lda mty
         cmp #32
         bne @trow
-        ; ---- player: 2x2 block plus a nose pixel in the facing direction
+        ; ---- player: an arrow (5x5, one of 8 directions) centred on you
         ;      x = 16 + 4 * px, y = 2 * py
         lda px
         rol
@@ -4240,57 +4495,43 @@ drawmap:
         lda py+1
         rol
         sta mpy
-        ldx mpx
-        ldy mpy
-        jsr plot
-        inx
-        jsr plot
-        iny
-        jsr plot
-        dex
-        jsr plot
-        lda pa                  ; nose: (cos >> 6, sin >> 7) from the block
-        sta gptr
-        lda pa+1
-        jsr getcos
-        cmp #$80
-        ror
-        cmp #$80
-        ror
-        cmp #$80
-        ror
-        cmp #$80
-        ror
-        cmp #$80
-        ror
+        lda pa                  ; direction: (angle + 1/16 turn) / 8
         clc
-        adc mpx
+        adc #64
+        sta tmp
+        lda pa+1
+        adc #0
+        asl tmp
+        rol
+        and #7
+        sta tmp
+        asl
+        asl
+        adc tmp                 ; (C clear) x 5: its first row in arrows
         sta mnx
-        lda pa+1
+        lda mpy
         sec
-        sbc #1
-        jsr getcos
-        cmp #$80
-        ror
-        cmp #$80
-        ror
-        cmp #$80
-        ror
-        cmp #$80
-        ror
-        cmp #$80
-        ror
-        cmp #$80
-        ror
-        clc
-        adc mpy
-        tay
-        ldx mnx
-        lda #$55                ; colour 1 (PF0): yellow on the map
-        sta pcol
+        sbc #2
+        sta tmp2                ; row being drawn
+        lda #5
+        sta cnt
+@ar:    ldy mnx
+        lda arrows,y
+        sta tmp
+        ldx mpx
+        dex
+        dex
+        ldy tmp2
+@ab:    asl tmp
+        bcc @an
         jsr plot
-        inx
-        jsr plot
+@an:    inx
+        lda tmp                 ; (the low 3 bits are always 0)
+        bne @ab
+        inc mnx
+        inc tmp2
+        dec cnt
+        bne @ar
         lda #$FF
         sta pcol
         ldy #0                  ; compass rose in the right margin
@@ -4482,7 +4723,9 @@ drawhud:
 @ks:    sta a:HUD+KEYPOS,x
         dex
         bpl @k
-        lda ammo
+        ldx weapon              ; the gun in hand's ammo
+        lda ammop,x
+        sta ammo
         jsr bin2dec
         lda dg1
         sta a:HUD+AMMOPOS
@@ -5820,11 +6063,11 @@ hurtslot:
 ; ---------------------------------------------------------------------
 ; Weapons:            pistol shotgun chaingun
 wdmg:   .byte 1, 3, 1           ; damage per hit (imps have E_HP)
-wcost:  .byte 1, 2, 1           ; ammo per shot
+wcost:  .byte 1, 1, 1           ; ammo per shot (each gun has its own)
 wcool:  .byte 12, 45, 7         ; frames (1/60 s) between shots
 wauto:  .byte 0, 0, 1           ; fires while held
 wflash: .byte 8, 13, 7          ; muzzle flash / shot sound length
-wcolor: .byte $00, $22, $08     ; gun colour: pistol black, shotgun brown, SMG silver
+wcolor: .byte $00, $22, $06     ; gun colour: pistol black, shotgun brown, SMG dark silver
 wkeys:  .byte $1F, $1E, $1A     ; keys 1, 2, 3
 keytxt: .byte $2B, $25, $39     ; "KEY"
 
@@ -5923,125 +6166,6 @@ touchdoor:
         sta won
         rts
 
-; pickup_touch: X = pickup thing.  Collect it if you're within 0.4 tiles.
-pickup_touch:
-        stx ei
-        sec
-        lda px
-        sbc EXL,x
-        tay
-        lda px+1
-        sbc EXH,x
-        jsr close
-        bcc @far
-        ldx ei
-        sec
-        lda py
-        sbc EYL,x
-        tay
-        lda py+1
-        sbc EYH,x
-        jsr close
-        bcs @take
-@far:   ldx ei
-        rts
-@take:  ldx ei                   ; (nothing is taken while that stat is full)
-        ldy ETYP,x
-        cpy #PK_AMMO
-        bne @t1
-        lda ammo
-        cmp #99
-        bcs @fu
-@t1:    cpy #PK_HEALTH
-        bne @t2
-        lda health
-        cmp #100
-        bcs @fu
-@t2:    cpy #PK_TIME
-        bne @t3
-        lda mins
-        cmp #T_CAPM
-        bcc @t3
-@fu:    jmp pkfull              ; full: say so, leave it there
-@t3:    lda #0
-        sta EST,x
-        lda #4                  ; blip
-        sta thump
-        lda ETYP,x
-        cmp #PK_AMMO
-        bne @n1
-        lda thp                 ; 10 + 2 x this level's imp toughness
-        asl
-        adc #AMMO_PK-5
-        sta dtmp
-        jsr addammo
-        lda #<msg_ammo
-        ldy #>msg_ammo
-        jsr showmsg
-        lda dtmp
-        jsr div10
-        sta a:HUD+40+AMMODIG+1
-        stx a:HUD+40+AMMODIG
-        jsr drawhud
-        ldx ei
-        rts
-@n1:    cmp #PK_HEALTH
-        bne @n2
-        clc
-        lda health
-        adc #HEALTH_PK
-        cmp #101
-        bcc @h
-        lda #100
-@h:     sta health
-        lda #<msg_health
-        ldy #>msg_health
-        bne @msg
-@n2:    cmp #PK_TIME
-        bne @n3
-        clc
-        lda tadm
-        adc #TIME_PK
-        sta tadm
-        lda #<msg_time
-        ldy #>msg_time
-        bne @msg
-@n3:    cmp #PK_SHOTGUN
-        bne @n4
-        lda #10
-        jsr addammo
-        ldx #1
-        lda #<msg_shotgun
-        ldy #>msg_shotgun
-        bne @gun
-@n4:    cmp #PK_CHAIN
-        bne @n5
-        lda #20
-        jsr addammo
-        ldx #2
-        lda #<msg_chain
-        ldy #>msg_chain
-        bne @gun
-@n5:    lda #1                  ; the key: the exit opens
-        sta havekey
-        lda #2
-        jsr setdoor
-        lda #<msg_gotkey
-        ldy #>msg_gotkey
-@msg:   jsr showmsg
-        jsr drawhud
-@no:    ldx ei
-        rts
-@gun:   sta tmp                 ; new weapon: own it and switch to it
-        sty tmp2
-        lda #1
-        sta owned,x
-        stx weapon
-        jsr setgun
-        lda tmp
-        ldy tmp2
-        jmp @msg
-
 ; setdoor: A = exit tile value (2 open, 4 barred)
 setdoor:inc forcer              ; (a door changes: draw the view again)
         pha
@@ -6051,16 +6175,6 @@ setdoor:inc forcer              ; (a door changes: draw the view again)
         sta nh
         pla
         jmp stmap
-
-; addammo: ammo += A, at most 99
-addammo:
-        clc
-        adc ammo
-        cmp #100
-        bcc @a
-        lda #99
-@a:     sta ammo
-        rts
 
 ; close: Y/A = low/high of a signed 8.8 distance; C set if |d| < 0.4 tile
 close:  cmp #0
@@ -6164,6 +6278,12 @@ RIDH:   .res 40         ;   ... and page * 2 + face
 .include "ending.s"
 
 ; things, part 1: page 4 (the OS's cassette buffer; no cassette here)
+
+.segment "BSS5"                 ; ($BA00: free since the display lists moved under the OS)
+ammop:  .res 3          ; ammo for each gun (ammo, in zero page: the gun in hand's)
+pkw:    .res 1          ; pickup_touch: the gun whose ammo it was
+mirl:   .res 2          ; the stripe tiles west and north of the exit (map index low,
+mirp:   .res 2          ;   page * 2 as in hitid): mirrored stripes
 .segment "BSS4"
 EXL:    .res MAXTH      ; things: position 8.8
 EXH:    .res MAXTH

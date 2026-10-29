@@ -503,13 +503,20 @@ dpair:  stx pairx
         jmp bbfill
 @tex:   jmp dtex
 
-; hzs: the exit's stripes scroll (A = texture id, >= HAZID)
+; hzs: the exit's stripes scroll (A = texture id, >= HAZID), towards the door
 hzs:    cmp #HAZID+16
-        bcs @x
+        bcs @m
         inc hzvis               ; (stripes on screen: they move)
         adc hzph                ; (C clear)
         and #15
         ora #HAZID
+        rts
+@m:     cmp #HZMID              ; (the mirrored ones move the other way)
+        bcc @x
+        inc hzvis
+        sbc hzph                ; (C set)
+        and #15
+        ora #HZMID
 @x:     rts
 
 ; bthi/btlo: bt = the taller ray's 8 band nibbles (left / right): texture
