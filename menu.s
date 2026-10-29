@@ -6,7 +6,7 @@
 ;    OVLBAN  ->$BB90 the game-over banner, copied to spare RAM by the menu
 ;    OVLBOT  $1A00  the demo bot (above buffer 0, so it survives the demo)
 ; =====================================================================
-.import mtitle, mopt1, mopt2, mhint, mhs, mhelp1, mhelp2, mcols
+.import mtitle, mopt1, mopt2, mhint, mhs, mhelp1, mhelp2, mhelp3, mcols
 .import banbits, msg_demo, imsg1, imsg2, imsg3, imsg4, msg_god, msg_lsel
 .importzp LSCOL
 .import __OVLC1_LOAD__, __OVLC1_RUN__, __OVLC1_SIZE__
@@ -457,12 +457,14 @@ mdl:    .byte $70, $70, $70, $70    ; (all of it ends by line 200: TV safe)
         .byte $70, $70, $70
         .byte $42
         .word mhs
-        .byte $70, $70, $70
+        .byte $70, $70                  ; (a blank line less: room for mhelp3)
         .byte $42
         .word mhelp1
         .byte $70
         .byte $42
         .word mhelp2
+        .byte $42
+        .word mhelp3
         .byte $41
         .word mdl
 

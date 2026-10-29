@@ -46,13 +46,15 @@ cartridge back on and cold-starts. (Like a power-cycle, it clears the high score
 ## Weapons
 | Weapon | Found | Ammo per shot | Damage | Fire |
 |---|---|---|---|---|
-| Pistol | at the start | 1 round | 1 (an imp takes 3) | about 4 shots/s at most |
-| Shotgun | from level 2 | 1 shell | 3 (kills an imp) | slow, and hits every imp near the crosshair |
-| SMG | from level 4 | 1 round | 1 | automatic while held, about 6 shots/s |
+| Pistol | at the start | 1 round | 3 (an imp on levels 1-3 falls to one shot) | about 4 shots/s at most |
+| Shotgun | from level 2 | 1 shell | 6 | slow, and hits every imp near the crosshair |
+| SMG | from level 4 | 1 round | 1.5 | automatic while held, about 6 shots/s |
 
-**Each gun has its own ammo** (at most 99 each); the bottom bar shows the ammo of the gun
+**Each gun has its own ammo:** the pistol holds 100 rounds, the shotgun 30 shells and
+the SMG 200 rounds; the bottom bar shows the ammo of the gun
 in your hand. You start with 50 pistol rounds. Picking up a weapon you don't have
-switches to it with its first load (10 shells for the shotgun, 20 rounds for the SMG).
+switches to it with its first load (10 shells for the shotgun, 40 rounds for the SMG).
+Damage and monsters' hit points are kept in half points, for the SMG's 1.5.
 In your hand the pistol is black, the shotgun (a trench gun with its bayonet fixed)
 dark red-brown (`$30`: the gold levels' walls are the old brown's hue) and the SMG dark
 silver. A weapon you don't have yet lies somewhere in each level
@@ -60,18 +62,19 @@ until you find it.
 
 ## Pickups
 - **Ammo for one gun** looks like that gun: a small **black pistol** (pistol rounds), the
-  **shotgun** (shells) or the **SMG** (rounds). Pistol and SMG ammo is +16 at first,
-  growing with monster toughness (+18 on level 4, +30 on level 10); shells are half
-  that. If you don't have that gun yet, picking it up gives you the gun (switching to
+  **shotgun** (shells) or the **SMG** (rounds). Pistol ammo is +16 at first, growing
+  with monster toughness (+18 on level 4, +30 on level 10); shells are half that and
+  SMG rounds twice that. If you don't have that gun yet, picking it up gives you the gun (switching to
   it, with its first load), just as the weapon pickup does. A gun's ammo is only placed
   from the level that gun can first be found on (the shotgun from level 2, the SMG from
   level 4).
-- **Super ammo** is the green ammo box: it fills every gun to 99. One ammo pickup in four
-  is super ammo, a third as many as the guns' own ammo.
+- **Super ammo** is the green ammo box: it fills every gun. It's rare: each level has a
+  5% chance of one (one roll a level, the same on every level), in place of one of
+  that level's ammo pickups.
 - Red **health** packs (+25%, max 100%) and yellow **hourglasses** (+30 s on the clock).
 
 Walk over them to collect. A pickup stays where it is while that stat is full (that gun
-at 99 rounds, every gun you have at 99 for super ammo, 100% health, 5:00 on the clock),
+full, every gun you have full for super ammo, 100% health, 5:00 on the clock),
 so you can come back for it; standing on it says **AMMO MAX**, **HEALTH MAX** or
 **TIME MAX**. Later levels have more:
 
@@ -103,7 +106,7 @@ locked exit, without the stripes, and never opens.
 ## Room to grow
 | Space | Size | Planned use |
 |---|---|---|
-| Image A `$4000-$7FFF` | about 0.65K free (plus the start-up area, reused) | engine core and everything interrupts run |
+| Image A `$4000-$7FFF` | about 0.6K free (plus the start-up area, reused) | engine core and everything interrupts run |
 | Image B `$8000-$B7FF` | about 0.4K free | gameplay code |
 | RAM under the OS ROM | about 3.7K free (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
 | RAM `$3A50-$3BDC`, `$BA08-$BB8C` | about 0.8K | (the old shared display lists) |
@@ -146,10 +149,10 @@ Bug reports and ideas go in the repository's Issues.
   checks for a shot every game tick (1/20 s) and again between casting the rays and
   drawing the walls.
 - **1 / 2 / 3** (keyboard): pistol, shotgun, SMG, once you've found them
-- **T** (keyboard): room textures on/off
-- **P** (keyboard) or **START**: pause / resume. The clock, monsters and music all stop.
-- **SELECT**: automap on/off
-- **OPTION**: music on/off
+- **START** or **P** (keyboard): pause / resume. The clock, monsters and music all stop.
+- **SELECT** or **M** (keyboard): automap on/off
+- **OPTION** or **S** (keyboard): music on/off
+- **T** (keyboard): room textures on/off (not listed on the menu)
 - **G** (keyboard, for testing): god mode on/off. No damage, ammo never runs down,
   and the clock holds. The bottom line says GOD MODE when it goes on.
 - **RESET**: restarts the game from the title (clears the high score, like turning the
@@ -166,7 +169,8 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
   and let go of drops that fall down the screen), and two choices picked with the stick (up / down) and
   started with fire, START or RETURN: **Start with a random seed**, or **Play your own
   seed**. Typing 4 digits sets your seed (the newest digit shifts in from the right)
-  and moves to that option. The menu also shows the high score.
+  and moves to that option. The menu also shows the high score and the controls
+  (START/P pause, SELECT/M map, OPTION/S music).
 - **Waking up:** a run started from the menu opens on your eyes: dark, a slit of
   light, a blink, then the corridor. You wake in the maze with no memory of how you
   got there; the story lines play on the bottom line, ending with a flashing **YOU
@@ -224,7 +228,7 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
 Monsters wake up once they've seen you and then hunt you through the maze. They follow
 corridors around corners and attack when they reach you.
 
-| Monster | From | Toughness (pistol hits) | Speed | Attack | Kill |
+| Monster | From | Toughness (hit points) | Speed | Attack | Kill |
 |---|---|---|---|---|---|
 | **Imp** (brown) | level 1 | 3 until level 3, then +1 a level (4 on level 4 ... 12 max) | normal | claws, 10% | 100 pts |
 | **Brute** (pink) | level 3 | 1.5 × imp + 2 (6 on level 3, 17 on level 10) | 1.5 × imp | bite, 15% | 200 pts |
@@ -244,8 +248,8 @@ corridors around corners and attack when they reach you.
   kill its body turns into the pickup. These work like any other pickup (they wait
   while that stat is full). The keycard's carrier is the exception: it drops the
   keycard as it dies, and nothing else.
-- **Reaching the exit door:** each gun you have gets ammo (+20 pistol and SMG rounds,
-  +10 shells; max 99) and you get +25% health (max 100%),
+- **Reaching the exit door:** each gun you have gets ammo (+20 pistol rounds, +10
+  shells, +40 SMG rounds, up to what it holds) and you get +25% health (max 100%),
   then the next level is generated. The door is always as far from your start as the maze
   allows, measured by walking distance to its nearest open side.
 - **Game over:** at 0% health or when the clock hits 0:00. R retries the seed, START
@@ -474,9 +478,9 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$3BDD-$3BFD` | GOD MODE and level select messages (from the overlay) |
 | `$3C00-$3FFF` | BFS queue |
 | `$3F80-$3FEE` | Automap pickup dots (from the overlay; the BFS queue never reaches this far) |
-| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures, pickups (about 650 bytes free) |
+| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures, pickups (about 600 bytes free) |
 | `$7D80-$7FFC` | Start-up code, then (copied by the menu) level dressing: pickups per level, entrance, keycard lines, exit check, automap marks |
-| `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 410 bytes free) |
+| `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 400 bytes free) |
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |
 | `$B800-$B97E` | Things (part 2), weapon and maze variables |
 | `$B980-$B9F0` | Tunnel start and end (from the overlay, staged through `$2000`) |

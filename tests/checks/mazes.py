@@ -21,7 +21,7 @@ def deadends(M):
                 out.append(n)
     return out
 
-problems = []; longest = 0; levels = 0
+problems = []; longest = 0; levels = 0; supers = []
 for seed in ('0420', '1234', '9876'):
     g = Game(seed=5, tag='mz'); g.start(seed); g.run(4, key=ord('g')); g.run(5)
     for lv in range(1, 16):
@@ -39,6 +39,7 @@ for seed in ('0420', '1234', '9876'):
         if not any(ex[0]+o in dist for o in (1, -1, 32, -32)): problems.append(f'{where}: the exit is unreachable')
         for t in g.things():
             if M[t[3]*32+t[2]] != 0: problems.append(f'{where}: thing {t} in a wall')
+        supers.append(sum(1 for t in g.things() if t[1] == 0x80))
         if g.v('locked') and g.v('keyby') == 255 and not any(t[1] == 0x85 for t in g.things()):
             problems.append(f'{where}: a locked exit but no keycard anywhere')
         d = deadends(M); longest = max([longest] + d)
@@ -47,4 +48,6 @@ for seed in ('0420', '1234', '9876'):
 for p in problems: print('   ', p)
 check(not problems, f'{levels} levels (3 seeds x 15): sound mazes, one exit, one entrance, exit reachable, things on the floor')
 check(longest <= 4, f'longest dead end {longest} tiles (limit 4)')
+check(max(supers) <= 1 and sum(supers) <= 8,
+      f'super ammo: at most one a level, rare (a 5% roll a level): {sum(supers)} in {levels} levels')
 done()

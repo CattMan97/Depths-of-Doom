@@ -149,10 +149,10 @@ def line40(s):
     pad = (40 - len(vis(s))) // 2
     return ' ' * pad + s + ' ' * (40 - pad - len(vis(s)))
 
-HUD1 = " PISTOL  50  KILLS 0/0  ---  HEALTH 100%"
+HUD1 = " PISTOL   50 KILLS 0/0  ---  HEALTH 100%"
 assert len(HUD1) == 40, len(HUD1)
 table('hudline1', screencode(HUD1))
-for name, pos in (('WPNPOS', HUD1.index("PISTOL")), ('AMMOPOS', HUD1.index("50")),
+for name, pos in (('WPNPOS', HUD1.index("PISTOL")), ('AMMOPOS', HUD1.index("50") - 1),
                   ('KILLPOS', HUD1.index("0/")), ('KEYPOS', HUD1.index("---")),
                   ('HEALTHPOS', HUD1.index("100"))):
     out.append(f'.export {name}')
@@ -825,7 +825,8 @@ table('mhint', screencode(line40("TYPE 4 DIGITS TO SET YOUR SEED")))
 HS = line40("HIGH SCORE  000000")
 table('mhs', screencode(HS))
 table('mhelp1', screencode(line40("STICK TO CHOOSE, [FIRE] TO PLAY")))
-table('mhelp2', screencode(line40("[P] PAUSE   [SELECT] MAP   [T] TEXTURES")))
+table('mhelp2', screencode(line40("[START]/[P] PAUSE   [SELECT]/[M] MAP")))
+table('mhelp3', screencode(line40("[OPTION]/[S] MUSIC")))
 table('mcols', [0x0A, 0x0E, 0x00, 0x44, 0x00])  # COLOR0-4: DEPTHS gray, text white, DOOM red, black
 for name, pos in (('SEEDCOL', OPT2.index("0000")), ('HSCOL', HS.index("000000"))):
     out.append(f'.exportzp {name}')

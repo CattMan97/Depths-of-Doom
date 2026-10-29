@@ -15,23 +15,25 @@ check(g.v('locked') == 0 and 'KEY' not in g.hud() and '---' not in g.hud(), 'lev
 # pickups: ammo (each gun has its own), super ammo, health, time
 pools = lambda: [g.m[AMMOP+i] for i in range(3)]
 a0 = g.m[AMMO]; g.take(0x86)
-check(g.m[AMMO] == min(99, a0+16) and 'PISTOL AMMO +16' in g.msg(), f'pistol ammo pickup: {a0} -> {g.m[AMMO]}, message "{g.msg()}"')
+check(g.m[AMMO] == min(100, a0+16) and 'PISTOL AMMO +16' in g.msg(), f'pistol ammo pickup: {a0} -> {g.m[AMMO]}, message "{g.msg()}"')
+s = [t for t in g.things() if t[1] in (0x80, 0x86)][0]
+g.poke(ETYP+s[0], 0x80)                  # (made into super ammo: it's rare)
 g.poke(AMMOP, 40); g.run(2); g.take(0x80)
-check(pools() == [99, 99, 99] and 'SUPER AMMO' in g.msg(), f'super ammo fills every gun: {pools()}, "{g.msg()}"')
+check(pools() == [100, 30, 200] and 'SUPER AMMO' in g.msg(), f'super ammo fills every gun (100, 30, 200): {pools()}, "{g.msg()}"')
 g.poke(AMMOP, 50); g.poke(AMMOP+1, 0); g.poke(AMMOP+2, 0); g.run(2)
 g.poke(SYM['health'], 40); g.run(2); g.take(0x81)
 check(g.v('health') == 65, f'health pickup: 40 -> {g.v("health")}')
 c0 = g.clock(); g.take(0x82); g.run(5)
 check(g.clock()-c0 in (29, 30), f'time pickup (+30 s): clock {c0} -> {g.clock()}')
 g.run(260); check('FIND THE EXIT DOOR!' in g.msg(), f'message reverts to the level line: "{g.msg()}"')
-# pistol: one shot = 1 ammo, an imp takes 3
+# pistol: one shot = 1 ammo, 3 damage: an imp (3 hit points here) falls to one
 imp = next((t[0] for t in g.things() if t[1] == 0 and g.facing(t[0])), None)
 if check(imp is not None, 'found an imp with a straight line of fire'):
     g.poke(EWAKE+imp, 0); g.run(15)
     a0 = g.m[AMMO]
-    for k in range(3): g.run(2, trig=1); g.run(24)
-    g.run(10)
-    check(g.m[AMMO] == a0-3 and g.m[EST+imp] == 2, f'pistol: 3 shots, ammo {a0} -> {g.m[AMMO]}, imp state {g.m[EST+imp]} (2 = dead)')
+    check(g.m[EHP+imp] == 6, f'an imp has 3 hit points on level 1 (6 half points): {g.m[EHP+imp]}')
+    g.run(2, trig=1); g.run(34)
+    check(g.m[AMMO] == a0-1 and g.m[EST+imp] == 2, f'pistol: 1 shot, ammo {a0} -> {g.m[AMMO]}, imp state {g.m[EST+imp]} (2 = dead)')
 g.run(4, key=ord('2')); g.run(6)
 check(g.v('weapon') == 0 and "DON'T HAVE" in g.msg(), f'key 2 without a shotgun: "{g.msg()}"')
 check(g.finish_level(), 'level 1 -> 2 through the exit')
@@ -80,14 +82,14 @@ g.run(2); check(g.map()[d] == 2, f'exit opens (tile 4 -> {g.map()[d]}) once you 
 # shotgun ammo once you have the shotgun: shells (half a clip), and the gun in hand stays
 sh = [t for t in g.things() if t[1] == 0x83]
 if check(len(sh) > 0, 'level 3 has shotgun ammo lying about'):
-    g.run(4, key=ord('1')); g.run(6); p0 = pools(); g.take(0x83)
-    n = (10 + 2 * g.m[SYM['thp']]) // 2
-    check(g.v('weapon') == 0 and pools() == [p0[0], min(99, p0[1]+n), p0[2]] and f'SHOTGUN SHELLS +{n}' in g.msg(),
+    g.run(4, key=ord('1')); g.poke(AMMOP+1, 10); g.run(6); p0 = pools(); g.take(0x83)
+    n = (10 + g.m[SYM['thp']]) // 2     # (thp: in half points)
+    check(g.v('weapon') == 0 and pools() == [p0[0], min(30, p0[1]+n), p0[2]] and f'SHOTGUN SHELLS +{n}' in g.msg(),
           f'shells: {p0} -> {pools()}, still the pistol, "{g.msg()}"')
-    g.poke(AMMOP+1, 99); g.run(2)
+    g.poke(AMMOP+1, 30); g.run(2)
     if sh[1:]:
         g.place(sh[1][2], sh[1][3]); g.run(15)
-        check(any(t[0] == sh[1][0] for t in g.things()) and 'AMMO MAX' in g.msg(), f'shells at 99: they stay ("{g.msg()}")')
+        check(any(t[0] == sh[1][0] for t in g.things()) and 'AMMO MAX' in g.msg(), f'shells at 30 (full): they stay ("{g.msg()}")')
     g.run(4, key=ord('2')); g.run(6)
 check(g.finish_level(), 'level 3 -> 4 with the keycard')
 # ---- level 4: chaingun (SMG)
@@ -95,6 +97,11 @@ th = g.things(); print('level 4 things:', sorted(NAMES.get(t[1], 'imp') for t in
 check(any(t[1] == 0x84 for t in th), 'level 4 has the SMG')
 g.take(0x84); g.poke(AMMOP+2, 90); g.run(2)
 check(g.v('weapon') == 2 and 'SMG' in g.hud() and 'SMG!' in g.msg(), 'SMG pickup switches weapon (HUD and message say SMG)')
+imp = next((t[0] for t in g.things() if t[1] == 0 and g.facing(t[0])), None)
+if check(imp is not None, 'found an imp with a straight line of fire (level 4)'):
+    g.poke(EWAKE+imp, 0); g.poke(EHP+imp, 40); g.run(15); g.run(1, trig=1); g.run(12)
+    check(g.m[EHP+imp] == 37, f'an SMG hit does 1.5 (3 half points): 40 -> {g.m[EHP+imp]}')
+    g.poke(AMMOP+2, 90); g.run(2)
 a0 = g.m[AMMOP+2]; g.run(60, trig=1); g.run(5); used = a0-g.m[AMMOP+2]
 check(5 <= used <= 10, f'SMG is automatic: holding fire 1 s used {used} ammo')
 g.poke(AMMOP+2, 0); g.run(2); g.run(10, trig=1); g.run(3)
@@ -103,6 +110,6 @@ g.poke(AMMOP+2, 50); g.run(2)
 p0 = pools()
 check(g.finish_level() and g.v('weapon') == 2 and g.m[0x2C0] == 0x06,
       f'level 4 -> 5: the SMG keeps its dark silver (colour ${g.m[0x2C0]:02X})')
-check(pools() == [min(99, p0[0]+20), min(99, p0[1]+10), min(99, p0[2]+20)], f'the exit gives each gun ammo: {p0} -> {pools()}')
+check(pools() == [min(100, p0[0]+20), min(30, p0[1]+10), min(200, p0[2]+40)], f'the exit gives each gun ammo: {p0} -> {pools()}')
 g.close()
 done()

@@ -232,7 +232,7 @@ C_DEAD  = $44
 LODS    = 10            ; walls at least this scale are textured
 HAZID   = 112           ; texture id of the exit's stripes (texbase, tile 10)
 HZMID   = 208           ; ... mirrored (west / north of the exit: they point at it)
-E_HP    = 3             ; pistol shots to kill an imp
+E_HP    = 3             ; an imp's toughness (hit points; kept as half points: x 2)
 .ifndef E_SPEED
 E_SPEED = 8             ; 1/256 tile per tick, level 1
 ESTEP   = 1             ; faster each level
@@ -717,10 +717,10 @@ pickup_touch:
         cpy #PK_AMMO
         bne @t1
         ldx #2                  ; super ammo: full while every gun you have
-@sf:    lda owned,x             ;   is at 99
+@sf:    lda owned,x             ;   is full
         beq @sn
         lda ammop,x
-        cmp #99
+        cmp wcap,x
         bcc @t3
 @sn:    dex
         bpl @sf
@@ -738,12 +738,12 @@ pickup_touch:
         bcs @fu
         bcc @t3
 @t4:    lda pkwpn-PK_AMMO,y     ; a gun's ammo: full while you have that gun
-        bmi @t3                 ;   and it's at 99 (the keycard: never)
+        bmi @t3                 ;   and it's full (the keycard: never)
         tax
         lda owned,x
         beq @t3
         lda ammop,x
-        cmp #99
+        cmp wcap,x
         bcc @t3
         ldy #PK_AMMO            ; (AMMO MAX)
 @fu:    jmp pkfull              ; full: say so, leave it there
@@ -755,10 +755,11 @@ pickup_touch:
         lda ETYP,x
         cmp #PK_AMMO
         bne @n1
-        lda #99                 ; super ammo: every gun full
-        sta ammop
-        sta ammop+1
-        sta ammop+2
+        ldx #2                  ; super ammo: every gun full
+@sa:    lda wcap,x
+        sta ammop,x
+        dex
+        bpl @sa
         lda #<msg_super
         ldy #>msg_super
         bne @msg
@@ -811,11 +812,14 @@ pickup_touch:
         ldy wmsgh,x
         bne @msg
 @amm:   lda thp                 ; ammo: 10 + 2 x this level's imp toughness
-        asl                     ;   (shotgun shells: half that)
-        adc #AMMO_PK-5
+        clc                     ;   (thp: in half points), shotgun shells half
+        adc #AMMO_PK-5          ;   that, SMG rounds twice that
         cpx #1
-        bne @af
+        bne @a2
         lsr
+@a2:    cpx #2
+        bne @af
+        asl
 @af:    sta dtmp
         jsr addammo
         ldx pkw
@@ -842,12 +846,13 @@ pickup_touch:
         ldx ei
         rts
 
-; addammo: gun X's ammo += A, at most 99.  Keeps X.
+; addammo: gun X's ammo += A, at most what it holds (wcap).  Keeps X.
 addammo:clc
         adc ammop,x
-        cmp #100
+        bcs @c
+        cmp wcap,x
         bcc @a
-        lda #99
+@c:     lda wcap,x
 @a:     sta ammop,x
         rts
 
@@ -862,12 +867,16 @@ exitammo:
         bpl @l
         rts
 
-; pktype: A = a pickup type for placepk.  Ammo (PK_AMMO) becomes super ammo
-;         1 time in 4, else ammo for a gun found on this level or earlier.
+; pktype: A = a pickup type for placepk.  Ammo (PK_AMMO) is ammo for a gun
+;         found on this level or earlier; one roll a level (the last ammo
+;         placed) makes it super ammo instead, 1 time in 20, on every level.
 pktype: cmp #PK_AMMO
         bne @x
+        lda pcnt
+        cmp #1
+        bne @w
         jsr rnd
-        cmp #$40                ; (the top bits: the low ones lean)
+        cmp #13                 ; (13 / 256: 5%)
         bcc @s
 @w:     jsr rnd
         and #3
@@ -885,8 +894,9 @@ pktype: cmp #PK_AMMO
 ; by gun (pistol, shotgun, SMG)
 wpk:    .byte PK_PISTOL, PK_SHOTGUN, PK_CHAIN   ; its ammo pickup
 wlvl:   .byte 0, SHOTLEVEL, CHAINLEVEL          ; its ammo is placed from this level
-wfirst: .byte 0, 10, 20                         ; ammo with the gun when you find it
-wexit:  .byte 20, 10, 20                        ; ammo for reaching the exit
+wcap:   .byte 100, 30, 200                      ; the most it holds
+wfirst: .byte 0, 10, 40                         ; ammo with the gun when you find it
+wexit:  .byte 20, 10, 40                        ; ammo for reaching the exit
 wmsgl:  .byte <msg_shotgun, <msg_shotgun, <msg_chain
 wmsgh:  .byte >msg_shotgun, >msg_shotgun, >msg_chain
 wamsl:  .byte <msg_pammo, <msg_sammo, <msg_mammo
@@ -1890,8 +1900,19 @@ input:
         jsr textoggle
         jmp firechk
 @np:    cmp #$0A                ; P: pause
-        bne @nt
+        bne @nm
         jsr pause
+        jmp firechk
+@nm:    cmp #$25                ; M: automap (as SELECT)
+        bne @nk
+        ldx #1
+        stx amreq
+        jmp firechk
+@nk:    cmp #$3E                ; S: music on/off (as OPTION)
+        bne @nt
+        lda muson
+        eor #1
+        sta muson
         jmp firechk
 @nt:    jsr CHEAT               ; G: god mode, L: level select (keeps A)
         ldx #2
@@ -2924,6 +2945,9 @@ new_level:
         ldx thp
         inx
         stx thp+2               ; spitter: imp + 1
+        asl thp                 ; (in half points: the SMG does 1.5)
+        asl thp+1
+        asl thp+2
         ; ---- the mix: brutes from BRUTELEVEL ((level-1)/2, at most 3),
         ;      spitters from SPITLEVEL ((level-3)/2, at most 3), rest imps
         lda #0
@@ -4753,11 +4777,13 @@ drawhud:
         ldx weapon              ; the gun in hand's ammo
         lda ammop,x
         sta ammo
-        jsr bin2dec
-        lda dg1
+        jsr bin2dec             ; (up to 200: three digits)
+        lda dg2
         sta a:HUD+AMMOPOS
-        lda dg0
+        lda dg1
         sta a:HUD+AMMOPOS+1
+        lda dg0
+        sta a:HUD+AMMOPOS+2
         lda kills
         jsr bin2dec
         lda dg0
@@ -6090,7 +6116,7 @@ hurtslot:
 
 ; ---------------------------------------------------------------------
 ; Weapons:            pistol shotgun chaingun
-wdmg:   .byte 1, 3, 1           ; damage per hit (imps have E_HP)
+wdmg:   .byte 6, 12, 3          ; damage per hit, in half points: 3, 6 and 1.5
 wcost:  .byte 1, 1, 1           ; ammo per shot (each gun has its own)
 wcool:  .byte 12, 45, 7         ; frames (1/60 s) between shots
 wauto:  .byte 0, 0, 1           ; fires while held
