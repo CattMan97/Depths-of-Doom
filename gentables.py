@@ -824,9 +824,9 @@ table('mopt2', screencode(OPT2))
 table('mhint', screencode(line40("TYPE 4 DIGITS TO SET YOUR SEED")))
 HS = line40("HIGH SCORE  000000")
 table('mhs', screencode(HS))
-table('mhelp1', screencode(line40("STICK TO CHOOSE, [FIRE] TO PLAY")))
+table('mhelp1', screencode(line40("[W][A][S][D] MOVE  [Q]/[E] STRAFE  [SHIFT] FIRE")))
 table('mhelp2', screencode(line40("[START]/[P] PAUSE   [SELECT]/[M] MAP")))
-table('mhelp3', screencode(line40("[OPTION]/[S] MUSIC")))
+table('mhelp3', screencode(line40("[OPTION]/[O] MUSIC")))
 table('mcols', [0x0A, 0x0E, 0x00, 0x44, 0x00])  # COLOR0-4: DEPTHS gray, text white, DOOM red, black
 for name, pos in (('SEEDCOL', OPT2.index("0000")), ('HSCOL', HS.index("000000"))):
     out.append(f'.exportzp {name}')

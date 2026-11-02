@@ -54,6 +54,7 @@ AUDCTL  = $D208
 DLISTL  = $D402
 COLPM0  = $D012         ; (PCOLR0-3, COLOR0-4 shadows map to $D012-$D01A)
 PORTA   = $D300
+SKSTAT  = $D20F         ; POKEY: bit 2 = 0 while a key is held, bit 3 = 0 while SHIFT is
 TRIG0   = $D010
 KEYDEL  = $02F1         ; OS: keyboard debounce timer
 PMBASE  = $D407
@@ -663,6 +664,71 @@ arrows:
         .byte %00100000, %01110000, %10101000, %00100000, %00100000
         .byte %00111000, %00011000, %00101000, %01000000, %10000000
 .segment "CODE"
+; keypad: from the VBI, after the stick and trigger are read.  The keyboard
+;         as a second controller (only one key at a time: the hardware scans
+;         them one by one): W / S walk, A / D turn (as the stick), Q / E
+;         strafe (kstrafe), SHIFT fires (as the trigger: it reads while a
+;         key is held).  Keeps nothing but Y.
+keypad: ldx #0
+        lda SKSTAT
+        and #4                  ; a key held?
+        bne @k
+        lda KBCODE
+        and #$3F                ; (without SHIFT / CTRL)
+        cmp #$2F                ; Q
+        bne @e
+        ldx #$C0
+        bne @k
+@e:     cmp #$2A                ; E
+        bne @m
+        ldx #$40
+        bne @k
+@m:     stx kstrafe
+        ldx #3
+@l:     cmp kmove,x
+        beq @s
+        dex
+        bpl @l
+        bmi @sh
+@s:     lda STICK0
+        and kmask,x
+        sta STICK0
+        jmp @sh
+@k:     stx kstrafe
+@sh:    lda SKSTAT
+        and #8                  ; SHIFT: fire
+        bne @x
+        lda #0
+        sta STRIG0
+@x:     rts
+kmove:  .byte $2E, $3E, $3F, $3A        ; W, S, A, D
+kmask:  .byte $0E, $0D, $0B, $07        ;   up, down, left, right (0 = pushed)
+
+; strafe: Q / E held: a step sideways (a quarter turn from where you face)
+strafe: lda kstrafe
+        beq @x
+        sta tmp
+        lda pa+1                ; movement table index = pa >> 2, + a quarter
+        sta tmp2
+        lda pa
+        lsr tmp2
+        ror
+        lsr tmp2
+        ror
+        clc
+        adc tmp
+        tax
+        lda movxl,x
+        sta mdxl
+        lda movxh,x
+        sta mdxh
+        lda movyl,x
+        sta mdyl
+        lda movyh,x
+        sta mdyh
+        jmp trymove
+@x:     rts
+
 ; seenear: the 3x3 tiles around you (curl, curh) count as seen, so the
 ;          automap shows the walls beside you even if you never looked at them
 seenear:sec
@@ -1461,6 +1527,8 @@ ivbi:   inc RTCLOK+2
         sta STICK0
         lda TRIG0
         sta STRIG0
+        jsr keypad              ; (the keyboard: W/S/A/D as the stick, Q/E
+                                ;   strafe, SHIFT as fire)
         lda KEYDEL
         beq vbi
         dec KEYDEL
@@ -1889,7 +1957,8 @@ input:
         sbc movyh,x
         sta mdyh
         jsr trymove
-@fire:  lda CH                  ; weapon keys 1-3
+@fire:  jsr strafe               ; (Q / E)
+        lda CH                  ; weapon keys 1-3
         cmp #$FF
         beq firechk
         ldx #$FF
@@ -1908,7 +1977,7 @@ input:
         ldx #1
         stx amreq
         jmp firechk
-@nk:    cmp #$3E                ; S: music on/off (as OPTION)
+@nk:    cmp #$08                ; O: music on/off (as OPTION; S walks back)
         bne @nt
         lda muson
         eor #1
@@ -6338,6 +6407,8 @@ ammop:  .res 3          ; ammo for each gun (ammo, in zero page: the gun in hand
 pkw:    .res 1          ; pickup_touch: the gun whose ammo it was
 mirl:   .res 2          ; the stripe tiles west and north of the exit (map index low,
 mirp:   .res 2          ;   page * 2 as in hitid): mirrored stripes
+kstrafe:.res 1          ; Q / E held: $C0 strafe left, $40 right (a quarter turn
+                        ;   in the movement table), 0 neither
 .segment "BSS4"
 EXL:    .res MAXTH      ; things: position 8.8
 EXH:    .res MAXTH

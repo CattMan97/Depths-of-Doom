@@ -15,7 +15,8 @@
      AUDLOG=f    script mode: log AUDF1-4 and AUDC1-4 (8 bytes) every frame
 
    Input encoding (both modes): stick = the directions pressed, as a bit mask
-   (1 up, 2 down, 4 left, 8 right; 0 = centred); trig 1 = fire pressed.
+   (1 up, 2 down, 4 left, 8 right; 0 = centred); trig 1 = fire pressed,
+   + 2 = SHIFT held (on its own: the keyboard's fire key).
 
    Interactive mode, one command per line, each answered with "#DONE":
      FRAMES STICK TRIG [KEY]   run FRAMES frames with that input.  KEY is an
@@ -118,7 +119,7 @@ int main(int argc, char **argv) {
 			else {
 				if (sscanf(line, "%d %d %d %d", &fr, &st, &tr, &kc) < 3) break;
 				for (i = 0; i < fr; i++) {
-					in.joy0 = st; in.trig0 = tr;
+					in.joy0 = st; in.trig0 = tr & 1; in.shift = (tr >> 1) & 1;
 					if (kc < 0) { in.keychar = 0; in.special = (i == 0) ? -kc : 0; }
 					else in.keychar = kc;
 					frame(&in); n++;
@@ -145,7 +146,7 @@ int main(int argc, char **argv) {
 			if (flag == 'p') { m[0x83]=v[0]; m[0x82]=v[1]; m[0x85]=v[2]; m[0x84]=v[3]; m[0x86]=v[4]; m[0x87]=v[5]; }
 			in.select = (flag == 'S'); in.option = (flag == 'O'); in.start = (flag == 'T');
 			in.keychar = (flag == 'K') ? v[0] : 0;
-			for (i = 0; i < frames; i++) { in.joy0 = stick; in.trig0 = trig; frame(&in); n++; }
+			for (i = 0; i < frames; i++) { in.joy0 = stick; in.trig0 = trig & 1; in.shift = (trig >> 1) & 1; frame(&in); n++; }
 			if (flag == 'H') CPU_pchist = pch;
 			if (flag == 's') { sprintf(buf, "%s_%02d.ppm", argv[2], shotno++); shot(buf); }
 			tok = strtok(NULL, " ");

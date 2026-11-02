@@ -106,10 +106,10 @@ locked exit, without the stripes, and never opens.
 ## Room to grow
 | Space | Size | Planned use |
 |---|---|---|
-| Image A `$4000-$7FFF` | about 0.6K free (plus the start-up area, reused) | engine core and everything interrupts run |
+| Image A `$4000-$7FFF` | about 0.45K free (plus the start-up area, reused) | engine core and everything interrupts run |
 | Image B `$8000-$B7FF` | about 0.4K free | gameplay code |
 | RAM under the OS ROM | about 3.7K free (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
-| RAM `$3A50-$3BDC`, `$BA08-$BB8C` | about 0.8K | (the old shared display lists) |
+| RAM `$3A50-$3BDC`, `$BA09-$BB8C` | about 0.8K | (the old shared display lists) |
 | RAM `$B800-$B9FF` | about 0.1K free | things (24 slots, with page 4), weapon and maze state |
 | Cartridge bank 4 | about 4K free | the overlay (menu, wake-up scene, demo, game-over banner) and resident extras |
 | Cartridge bank 5 | about 1.5K free | the ending's code (its area at `$1000` holds 2.75K) |
@@ -140,7 +140,15 @@ machines that have them, but the game must keep running on a plain 64K machine.
 
 Bug reports and ideas go in the repository's Issues.
 
-## Controls (joystick, port 1)
+## Controls (joystick, port 1, or the keyboard)
+**Keyboard** (this branch, `keyboard-controls`): **W / S** walk forward / back, **A / D**
+turn, **Q / E** strafe left / right, **SHIFT** fires. The Atari's keyboard reports
+one key at a time (SHIFT and the console keys are read on their own), so you can't
+walk and turn, or walk and strafe, at the same moment with keys alone; SHIFT fires
+while you walk, turn or strafe. The keys stand in for the stick in the VBI (`keypad`):
+W/S/A/D clear the stick's bits, SHIFT reads as the trigger, so the menu and level
+select take them too. The joystick still works alongside.
+
 - **Up / Down**: walk forward / back
 - **Left / Right**: turn. Starts slow for fine aiming and speeds up while held.
 - **Fire**: shoot. You start with 50 pistol rounds; each gun has its own ammo. The trigger is
@@ -151,7 +159,7 @@ Bug reports and ideas go in the repository's Issues.
 - **1 / 2 / 3** (keyboard): pistol, shotgun, SMG, once you've found them
 - **START** or **P** (keyboard): pause / resume. The clock, monsters and music all stop.
 - **SELECT** or **M** (keyboard): automap on/off
-- **OPTION** or **S** (keyboard): music on/off
+- **OPTION** or **O** (keyboard): music on/off
 - **T** (keyboard): room textures on/off (not listed on the menu)
 - **G** (keyboard, for testing): god mode on/off. No damage, ammo never runs down,
   and the clock holds. The bottom line says GOD MODE when it goes on.
@@ -170,7 +178,7 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
   started with fire, START or RETURN: **Start with a random seed**, or **Play your own
   seed**. Typing 4 digits sets your seed (the newest digit shifts in from the right)
   and moves to that option. The menu also shows the high score and the controls
-  (START/P pause, SELECT/M map, OPTION/S music).
+  (WASD move, Q/E strafe, SHIFT fire; START/P pause, SELECT/M map, OPTION/O music).
 - **Waking up:** a run started from the menu opens on your eyes: dark, a slit of
   light, a blink, then the corridor. You wake in the maze with no memory of how you
   got there; the story lines play on the bottom line, ending with a flashing **YOU
@@ -478,14 +486,14 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$3BDD-$3BFD` | GOD MODE and level select messages (from the overlay) |
 | `$3C00-$3FFF` | BFS queue |
 | `$3F80-$3FEE` | Automap pickup dots (from the overlay; the BFS queue never reaches this far) |
-| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures, pickups (about 600 bytes free) |
+| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures, pickups, keyboard (about 470 bytes free) |
 | `$7D80-$7FFC` | Start-up code, then (copied by the menu) level dressing: pickups per level, entrance, keycard lines, exit check, automap marks |
 | `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 400 bytes free) |
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |
 | `$B800-$B97E` | Things (part 2), weapon and maze variables |
 | `$B980-$B9F0` | Tunnel start and end (from the overlay, staged through `$2000`) |
-| `$BA00-$BA07` | Each gun's ammo, the mirrored exit-stripe tiles (`BSS5`) |
-| `$BA08-$BB8C` | Free (was a game display list) |
+| `$BA00-$BA08` | Each gun's ammo, the mirrored exit-stripe tiles, the strafe key (`BSS5`) |
+| `$BA09-$BB8C` | Free (was a game display list) |
 | `$BB90-$BBFA` | Game-over banner code (from the overlay) |
 | `$BC00-$BFFF` | Automap: walls seen (also key-placement scratch) |
 | `$C000-$C5FF` | RAM under the OS ROM: the three game display lists (mirrored), 512 bytes each |
@@ -570,6 +578,7 @@ built-in Altirra OS), driven by Python scripts:
 | `flow` | the wake-up scene and skipping it, the demo, the ending |
 | `input_sound` | fire taps and latency, being hurt, the music stopping for the tunnel |
 | `system` | the stack page, the OS ROM off, RESET, 16K / 128K / 320K machines |
+| `keyboard` | W/S walk, A/D turn, Q/E strafe, SHIFT fires (alone and while walking), O music, M map, SHIFT starts a run from the menu |
 | `looks` | the exit stripes point at the door from both sides (all four ways an exit faces); automap: the arrow's 8 directions, the entrance mark on its tile, the walls around you |
 
 `tests/tools/` has the speed tools: `bench.py` (100 fixed views, monsters frozen: the
