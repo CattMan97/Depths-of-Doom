@@ -109,7 +109,7 @@ locked exit, without the stripes, and never opens.
 | Image A `$4000-$7FFF` | about 0.45K free (plus the start-up area, reused) | engine core and everything interrupts run |
 | Image B `$8000-$B7FF` | about 0.4K free | gameplay code |
 | RAM under the OS ROM | about 3.7K free (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
-| RAM `$3A50-$3BDC`, `$BA09-$BB8C` | about 0.8K | (the old shared display lists) |
+| RAM `$3A50-$3BDC`, `$BA33-$BB8C` | about 0.7K | (the old shared display lists) |
 | RAM `$B800-$B9FF` | about 0.1K free | things (24 slots, with page 4), weapon and maze state |
 | Cartridge bank 4 | about 4K free | the overlay (menu, wake-up scene, demo, game-over banner) and resident extras |
 | Cartridge bank 5 | about 1.5K free | the ending's code (its area at `$1000` holds 2.75K) |
@@ -141,13 +141,21 @@ machines that have them, but the game must keep running on a plain 64K machine.
 Bug reports and ideas go in the repository's Issues.
 
 ## Controls (joystick, port 1, or the keyboard)
+Pick **joystick** or **keyboard** on the **options screen** (OPTIONS, the main menu's
+third row: left / right change it, fire goes back). The game then reads only that one;
+the menus always take both, and the choice lasts until the machine is switched off or
+RESET (the joystick is the default). The hint line on the menu shows the chosen
+controls.
+
 **Keyboard** (this branch, `keyboard-controls`): **W / S** walk forward / back, **A / D**
 turn, **Q / E** strafe left / right, **SHIFT** fires. The Atari's keyboard reports
 one key at a time (SHIFT and the console keys are read on their own), so you can't
 walk and turn, or walk and strafe, at the same moment with keys alone; SHIFT fires
 while you walk, turn or strafe. The keys stand in for the stick in the VBI (`keypad`):
 W/S/A/D clear the stick's bits, SHIFT reads as the trigger, so the menu and level
-select take them too. The joystick still works alongside.
+select take them too. `ctlnow` says who the VBI reads (1 the joystick, 2 the keyboard,
+3 both, in the menus); the joystick, when it's not chosen, reads as centred and not
+pressed.
 
 - **Up / Down**: walk forward / back
 - **Left / Right**: turn. Starts slow for fine aiming and speeds up while held.
@@ -177,8 +185,10 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
   and let go of drops that fall down the screen), and two choices picked with the stick (up / down) and
   started with fire, START or RETURN: **Start with a random seed**, or **Play your own
   seed**. Typing 4 digits sets your seed (the newest digit shifts in from the right)
-  and moves to that option. The menu also shows the high score and the controls
-  (WASD move, Q/E strafe, SHIFT fire; START/P pause, SELECT/M map, OPTION/O music).
+  and moves to that option. A third row, **OPTIONS**, opens the options screen (the
+  controls: joystick or keyboard). The menu also shows the high score and the controls
+  (the chosen ones: stick and fire, or WASD, Q/E strafe and SHIFT; then START/P pause,
+  SELECT/M map, OPTION/O music).
 - **Waking up:** a run started from the menu opens on your eyes: dark, a slit of
   light, a blink, then the corridor. You wake in the maze with no memory of how you
   got there; the story lines play on the bottom line, ending with a flashing **YOU
@@ -492,8 +502,8 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |
 | `$B800-$B97E` | Things (part 2), weapon and maze variables |
 | `$B980-$B9F0` | Tunnel start and end (from the overlay, staged through `$2000`) |
-| `$BA00-$BA08` | Each gun's ammo, the mirrored exit-stripe tiles, the strafe key (`BSS5`) |
-| `$BA09-$BB8C` | Free (was a game display list) |
+| `$BA00-$BA32` | Each gun's ammo, the mirrored exit-stripe tiles, the strafe key, the controls chosen, the options screen's setting line (`BSS5`) |
+| `$BA33-$BB8C` | Free (was a game display list) |
 | `$BB90-$BBFA` | Game-over banner code (from the overlay) |
 | `$BC00-$BFFF` | Automap: walls seen (also key-placement scratch) |
 | `$C000-$C5FF` | RAM under the OS ROM: the three game display lists (mirrored), 512 bytes each |
@@ -523,8 +533,11 @@ Needs `ca65`/`ld65` from cc65 and Python 3.
   speed measurements).
 - **Overlay:** the main menu, demo bot and game-over banner live in cartridge bank 4.
   Opening the menu copies the bank to `$1000-$1AFF` (frame buffer 0, free then) with the
-  screen and interrupts off for a moment; the menu then copies its resident parts (bot,
-  banner) into spare corners of RAM listed above.
+  screen and interrupts off for a moment; the menu then copies its resident parts into
+  spare corners of RAM listed above: the small low-RAM pieces straight from the
+  cartridge (past the overlay, in `xcptab`), the banner (it goes under the cartridge,
+  at `$BB90`) from the overlay's copy (`cptab`). The overlay itself (`$1000-$1AFF`) is
+  nearly full (about 20 bytes free); new menu text belongs past it in bank 4.
 - **Ending:** `ending.s` is overlay 2 (bank 5, `ovl2.bin`), copied to `$1000` when level
   15 is cleared. `endart.py` draws its pictures (the corridor, the wasteland), the
   walking and standing figure (players 0 and 1) and the THE END lettering, packs them
@@ -578,7 +591,7 @@ built-in Altirra OS), driven by Python scripts:
 | `flow` | the wake-up scene and skipping it, the demo, the ending |
 | `input_sound` | fire taps and latency, being hurt, the music stopping for the tunnel |
 | `system` | the stack page, the OS ROM off, RESET, 16K / 128K / 320K machines |
-| `keyboard` | W/S walk, A/D turn, Q/E strafe, SHIFT fires (alone and while walking), O music, M map, SHIFT starts a run from the menu |
+| `keyboard` | W/S walk, A/D turn, Q/E strafe, SHIFT fires (alone and while walking), O music, M map; the options screen (joystick / keyboard), each choice ignoring the other controller in the game; SHIFT starts a run from the menu |
 | `looks` | the exit stripes point at the door from both sides (all four ways an exit faces); automap: the arrow's 8 directions, the entrance mark on its tile, the walls around you |
 
 `tests/tools/` has the speed tools: `bench.py` (100 fixed views, monsters frozen: the

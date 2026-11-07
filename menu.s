@@ -6,7 +6,8 @@
 ;    OVLBAN  ->$BB90 the game-over banner, copied to spare RAM by the menu
 ;    OVLBOT  $1A00  the demo bot (above buffer 0, so it survives the demo)
 ; =====================================================================
-.import mtitle, mopt1, mopt2, mhint, mhs, mhelp1, mhelp2, mhelp3, mcols
+.import mtitle, mopt1, mopt2, mopt3, mhint, mhs, mhelp1j, mhelp1k, mhelp2, mhelp3, mcols
+.import otitle, octlj, octlk, odescj, odesck, ohint1, ohint2
 .import banbits, msg_demo, imsg1, imsg2, imsg3, imsg4, msg_god, msg_lsel
 .importzp LSCOL
 .import __OVLC1_LOAD__, __OVLC1_RUN__, __OVLC1_SIZE__
@@ -113,11 +114,19 @@ MENU:        lda #0                  ; level dressing: straight from the cartrid
         sta mhs+HSCOL,x
         dex
         bpl @hs
+        lda #3                  ; menus: the joystick and the keyboard both
+        sta ctlnow
         lda #0
         sta mcur
+        sta srreq
+mback:  jsr hintset             ; (back from the options screen: here)
+        lda #<mdl
+        sta SDLSTL
+        lda #>mdl
+        sta SDLSTL+1
+        lda #0
         sta idle
         sta idle+1
-        sta srreq
         lda #1
         sta mfire               ; (fire must be let go first)
         lda STICK0
@@ -138,18 +147,22 @@ MENU:        lda #0                  ; level dressing: straight from the cartrid
         jsr mexit               ; nobody there: run the demo
         lda #1
         rts
-@in:    lda STICK0              ; up / down picks the option
+@in:    lda STICK0              ; up / down picks the option (one step a push)
         cmp mstk
         beq @nj
         sta mstk
         cmp #14
         bne @dn
-        lda #0
-        beq @set
+        lda mcur
+        beq @act
+        dec mcur
+        jmp @act
 @dn:    cmp #13
         bne @act
-        lda #1
-@set:   sta mcur
+        lda mcur
+        cmp #2
+        bcs @act
+        inc mcur
         jmp @act
 @nj:    lda STRIG0              ; fire (a fresh press) plays
         bne @rel
@@ -192,7 +205,16 @@ MENU:        lda #0                  ; level dressing: straight from the cartrid
         sta idle+1
         jsr mdraw
         jmp @loop
-@sel:   jsr mexit
+@sel:   lda mcur
+        cmp #2
+        bne @play
+        jsr options             ; the options screen, then the menu again
+        jmp mback
+@play:  jsr mexit
+        lda ctlm                ; the game: just the controls chosen
+        clc
+        adc #1
+        sta ctlnow
         lda mcur
         bne @own
         jsr randseed
@@ -370,33 +392,103 @@ mdraw:  ldx #3
         lda mopt2,x
         and #$7F
         ldy mcur
-        beq @2
+        cpy #1
+        bne @2
         ora #$80
 @2:     sta mopt2,x
+        lda mopt3,x
+        and #$7F
+        ldy mcur
+        cpy #2
+        bne @3
+        ora #$80
+@3:     sta mopt3,x
         dex
         bpl @l
         rts
 
+; hintset: the menu's hint line shows the controls chosen
+hintset:lda ctlm
+        bne @k
+        lda #<mhelp1j
+        ldx #>mhelp1j
+        bne @s
+@k:     lda #<mhelp1k
+        ldx #>mhelp1k
+@s:     sta mdlh1
+        stx mdlh1+1
+        rts
+
+; options: the options screen.  Left / right change the controls (joystick
+;          or keyboard: the game then takes just that one); fire, START or
+;          RETURN go back.
+options:lda #<odl
+        sta SDLSTL
+        lda #>odl
+        sta SDLSTL+1
+        lda #1
+        sta mfire
+        lda STICK0
+        sta mstk
+        lda #$FF
+        sta CH
+@dr:    ldx #39                 ; the setting, as a bar
+        ldy ctlm
+@c:     lda octlj,x
+        cpy #0
+        beq @j
+        lda octlk,x
+@j:     ora #$80
+        sta ocur,x
+        dex
+        bpl @c
+        lda #<odescj            ; and what it means
+        ldx #>odescj
+        cpy #0
+        beq @dj
+        lda #<odesck
+        ldx #>odesck
+@dj:    sta odlds
+        stx odlds+1
+@lp:    lda RTCLOK+2            ; once per frame
+@v:     cmp RTCLOK+2
+        beq @v
+        jsr drips
+        lda STICK0
+        cmp mstk
+        beq @f
+        sta mstk
+        and #12                 ; left or right: the other one
+        cmp #12
+        beq @f
+        lda ctlm
+        eor #1
+        sta ctlm
+        jmp @dr
+@f:     lda STRIG0              ; fire (a fresh press): back
+        bne @r
+        lda mfire
+        beq @x
+        bne @k
+@r:     lda #0
+        sta mfire
+@k:     lda srreq               ; START: back
+        beq @ky
+        lda #0
+        sta srreq
+        beq @x
+@ky:    lda CH
+        cmp #$FF
+        beq @lp
+        ldx #$FF
+        stx CH
+        and #$3F
+        cmp #$0C                ; RETURN: back
+        bne @lp
+@x:     rts
+
 cptab:  .word __OVLBAN_LOAD__, __OVLBAN_RUN__
         .byte <__OVLBAN_SIZE__
-        .word __OVLB2_LOAD__, __OVLB2_RUN__
-        .byte <__OVLB2_SIZE__
-        .word __OVLB3_LOAD__, __OVLB3_RUN__
-        .byte <__OVLB3_SIZE__
-        .word __OVLB4_LOAD__, __OVLB4_RUN__
-        .byte <__OVLB4_SIZE__
-        .word __OVLC1_LOAD__, __OVLC1_RUN__
-        .byte <__OVLC1_SIZE__
-        .word __OVLD1_LOAD__, __OVLD1_RUN__
-        .byte <__OVLD1_SIZE__
-        .word __OVLD2_LOAD__, __OVLD2_RUN__
-        .byte <__OVLD2_SIZE__
-        .word __OVLC2_LOAD__, __OVLC2_RUN__
-        .byte <__OVLC2_SIZE__
-        .word __OVLC3_LOAD__, __OVLC3_RUN__
-        .byte <__OVLC3_SIZE__
-        .word __OVLC4_LOAD__, __OVLC4_RUN__
-        .byte <__OVLC4_SIZE__
         .word $2000, __RT1_RUN__        ; (the tunnel, from its staging)
         .byte <__RT1_SIZE__
 cptabend:
@@ -434,9 +526,29 @@ xcptab: .word __RA1_LOAD__, __RA1_RUN__
         .byte <__ZMU_SIZE__
         .word __RT1_LOAD__, $2000       ; (under the cartridge: staged)
         .byte <__RT1_SIZE__
+        ; (the low-RAM pieces: straight from the cartridge too, which leaves
+        ;  the overlay room for the options screen)
+        .word __OVLB2_LOAD__, __OVLB2_RUN__
+        .byte <__OVLB2_SIZE__
+        .word __OVLB3_LOAD__, __OVLB3_RUN__
+        .byte <__OVLB3_SIZE__
+        .word __OVLB4_LOAD__, __OVLB4_RUN__
+        .byte <__OVLB4_SIZE__
+        .word __OVLD1_LOAD__, __OVLD1_RUN__
+        .byte <__OVLD1_SIZE__
+        .word __OVLD2_LOAD__, __OVLD2_RUN__
+        .byte <__OVLD2_SIZE__
+        .word __OVLC1_LOAD__, __OVLC1_RUN__
+        .byte <__OVLC1_SIZE__
+        .word __OVLC2_LOAD__, __OVLC2_RUN__
+        .byte <__OVLC2_SIZE__
+        .word __OVLC3_LOAD__, __OVLC3_RUN__
+        .byte <__OVLC3_SIZE__
+        .word __OVLC4_LOAD__, __OVLC4_RUN__
+        .byte <__OVLC4_SIZE__
 xcptabend:
 keytab: .byte $32, $1F, $1E, $1A, $18, $1D, $1B, $33, $35, $30   ; keys 0-9
-mcur:   .byte 0                 ; 0 random seed, 1 your own seed
+mcur:   .byte 0                 ; 0 random seed, 1 your own seed, 2 options
 idle:   .word 0
 mfire:  .byte 0
 mstk:   .byte 0
@@ -454,12 +566,16 @@ mdl:    .byte $70, $70, $70, $70    ; (all of it ends by line 200: TV safe)
         .byte $70
         .byte $42
         .word mhint
-        .byte $70, $70, $70
+        .byte $70
+        .byte $42
+        .word mopt3
+        .byte $70
         .byte $42
         .word mhs
         .byte $70, $70                  ; (a blank line less: room for mhelp3)
         .byte $42
-        .word mhelp1
+mdlh1 = *                       ; (its address: hintset)
+        .word mhelp1j           ; (hintset: by the controls chosen)
         .byte $70
         .byte $42
         .word mhelp2
@@ -467,6 +583,28 @@ mdl:    .byte $70, $70, $70, $70    ; (all of it ends by line 200: TV safe)
         .word mhelp3
         .byte $41
         .word mdl
+
+; the options screen's display list
+odl:    .byte $70, $70, $70, $70
+        .byte $47
+        .word mtitle
+        .byte $70, $70, $70
+        .byte $42
+        .word otitle
+        .byte $70, $70
+        .byte $42
+        .word ocur
+        .byte $70
+        .byte $42
+odlds = *                       ; (its address: options)
+        .word odescj
+        .byte $70, $70, $70, $70
+        .byte $42
+        .word ohint1
+        .byte $42
+        .word ohint2
+        .byte $41
+        .word odl
 
 ; =====================================================================
 ; INTRO: the wake-up.  Called once, from the main loop, when the first

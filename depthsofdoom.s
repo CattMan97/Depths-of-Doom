@@ -568,6 +568,10 @@ start:
         lda TRIG3               ; tell the XL OS the cartridge is gone on
         sta GINTLK              ; purpose (otherwise its VBI locks up)
         jsr osinit              ; (RESET restarts the game)
+        lda #0                  ; the joystick, until the options say otherwise
+        sta ctlm
+        lda #3
+        sta ctlnow
         cli
 
         ; ---- clear RAM $0500-$39FF (writers, DLs, HUD, buffers, PMG)
@@ -1527,8 +1531,20 @@ ivbi:   inc RTCLOK+2
         sta STICK0
         lda TRIG0
         sta STRIG0
-        jsr keypad              ; (the keyboard: W/S/A/D as the stick, Q/E
-                                ;   strafe, SHIFT as fire)
+        lda ctlnow              ; who's playing: bit 0 the joystick, bit 1
+        lsr                     ;   the keyboard
+        bcs @kj
+        ldx #15                 ; (no joystick: centred, not pressed)
+        stx STICK0
+        ldx #1
+        stx STRIG0
+@kj:    lsr
+        bcs @kb
+        lda #0                  ; (no keyboard: no strafing either)
+        sta kstrafe
+        beq @kn
+@kb:    jsr keypad              ; (the keyboard: W/S/A/D as the stick, Q/E
+@kn:                            ;   strafe, SHIFT as fire)
         lda KEYDEL
         beq vbi
         dec KEYDEL
@@ -6409,6 +6425,11 @@ mirl:   .res 2          ; the stripe tiles west and north of the exit (map index
 mirp:   .res 2          ;   page * 2 as in hitid): mirrored stripes
 kstrafe:.res 1          ; Q / E held: $C0 strafe left, $40 right (a quarter turn
                         ;   in the movement table), 0 neither
+ctlm:   .res 1          ; the controls chosen on the options screen: 0 joystick,
+                        ;   1 keyboard
+ctlnow: .res 1          ; who's read now: 1 the joystick, 2 the keyboard, 3 both
+                        ;   (the menus)
+ocur:   .res 40         ; the options screen's setting line (the bar)
 .segment "BSS4"
 EXL:    .res MAXTH      ; things: position 8.8
 EXH:    .res MAXTH

@@ -107,10 +107,12 @@ class Game:
         self.p.stdin.close(); self.p.wait()
 
     # ---- game-level helpers
-    def start(self, seed_digits=None):
+    def start(self, seed_digits=None, keyboard=False):
         """From power-on: type the seed (or take a random one), start, skip the
-        wake-up scene, and return once level 1 is running."""
+        wake-up scene, and return once level 1 is running.  keyboard: play with
+        the keyboard (as if chosen on the options screen)."""
         self.run(100)
+        if keyboard: self.poke(SYM['ctlm'], 1)
         if seed_digits:
             for c in seed_digits: self.run(4, key=ord(c)); self.run(6)
         self.run(3, trig=1)
