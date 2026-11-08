@@ -66,7 +66,7 @@ def lines(g):
     return out
 g = Game(seed=5, tag='kb5'); g.run(100)
 mdl = dl(g)
-check(lines(g)[:2] == ['START', 'OPTIONS'] and 'TYPE 4 DIGITS TO SET YOUR SEED' not in lines(g),
+check(lines(g)[:2] == ['START', 'OPTIONS'] and not any('DIGITS' in l for l in lines(g)),
       f'the main menu: just START and OPTIONS ({lines(g)})')
 g.run(4, stick=2); g.run(4); g.run(4, stick=2); g.run(4)          # (down twice: stops at OPTIONS)
 g.run(3, trig=1); g.run(10)
@@ -82,8 +82,8 @@ check(dl(g) == mdl, 'fire goes back to the menu')
 check(any('WASD MOVE' in l for l in lines(g)), f"the menu's hint line shows the keyboard controls: {lines(g)}")
 g.run(4, stick=1); g.run(4)                    # (up: START)
 g.run(3, trig=1); g.run(10)
-check(dl(g) == mdl and lines(g)[:3] == ['START WITH A RANDOM SEED', 'PLAY YOUR OWN SEED:  0000', 'BACK'],
-      f'START: the seed page ({lines(g)[:4]})')
+check(dl(g) == mdl and lines(g)[:4] == ['START WITH A RANDOM SEED', 'PLAY YOUR OWN SEED:  0000', 'BACK', ''],
+      f'START: the seed page, no typing hint ({lines(g)[:4]})')
 g.run(4, stick=2); g.run(4); g.run(4, stick=2); g.run(4); g.run(4, stick=2); g.run(4)
 g.run(3, trig=1); g.run(10)
 check(lines(g)[:2] == ['START', 'OPTIONS'], f'BACK: the main menu again ({lines(g)[:2]})')

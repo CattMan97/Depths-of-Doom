@@ -185,7 +185,8 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
   and let go of drops that fall down the screen), and two choices picked with the stick
   (up / down) and taken with fire, START or RETURN: **START** and **OPTIONS**.
   - **START** opens the seed page: **Start with a random seed**, **Play your own seed**,
-    or **BACK** to the main menu. Typing 4 digits (on either page) sets your seed (the
+    or **BACK** to the main menu. Typing 4 digits (on either page; the screen doesn't
+    say so, it's one for the manual) sets your seed (the
     newest digit shifts in from the right) and moves to the seed page's own-seed row.
   - **OPTIONS** opens the options screen (the controls: joystick or keyboard).
 

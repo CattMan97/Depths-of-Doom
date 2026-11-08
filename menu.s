@@ -6,7 +6,7 @@
 ;    OVLBAN  ->$BB90 the game-over banner, copied to spare RAM by the menu
 ;    OVLBOT  $1A00  the demo bot (above buffer 0, so it survives the demo)
 ; =====================================================================
-.import mtitle, mopt1, mopt2, mopt3, mostart, moback, mhint, mhs, mhelp1j, mhelp1k, mhelp2, mhelp3, mcols
+.import mtitle, mopt1, mopt2, mopt3, mostart, moback, mhs, mhelp1j, mhelp1k, mhelp2, mhelp3, mcols
 .import otitle, octlj, octlk, odescj, odesck, ohint1, ohint2
 .import banbits, msg_demo, imsg1, imsg2, imsg3, imsg4, msg_god, msg_lsel
 .importzp LSCOL
@@ -462,9 +462,9 @@ setpage:lda mpage
         jmp mdraw
 ; the pages' rows (the last one: not picked)
 pglo:   .byte <mostart, <mopt3, <mblank, <mblank
-        .byte <mopt1, <mopt2, <moback, <mhint
+        .byte <mopt1, <mopt2, <moback, <mblank
 pghi:   .byte >mostart, >mopt3, >mblank, >mblank
-        .byte >mopt1, >mopt2, >moback, >mhint
+        .byte >mopt1, >mopt2, >moback, >mblank
 rowoff: .byte mdr1-mdl, mdr2-mdl, mdr3-mdl, mdr4-mdl
 mlast:  .byte 1, 2                      ; each page's last row that can be picked
 
