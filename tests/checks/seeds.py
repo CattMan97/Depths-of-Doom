@@ -23,7 +23,7 @@ a2 = door_walk(P, 1); b2 = door_walk(P, 999)
 check(a2[SYM['level']] == 2 and b2[SYM['level']] == 2, 'reached level 2 both times')
 check(state(a2) == state(b2) and state(a2) != state(a), 'level 2 of seed 0420 is the same both times, and differs from level 1')
 check(state(run('100,0,0 '+typed('0421')+' 3,0,1 40,0,0', 1)) != state(a), 'seed 0421 gives a different maze')
-r1 = run('100,0,0 3,0,1 40,0,0', 5); r2 = run('75,0,0 3,0,1 40,0,0', 6)
+r1 = run('100,0,0 3,0,1 10,0,0 3,0,1 40,0,0', 5); r2 = run('75,0,0 3,0,1 10,0,0 3,0,1 40,0,0', 6)   # (START, then a random seed)
 check(seedtxt(r1) != seedtxt(r2) and state(r1) != state(r2), f'random seeds differ: {seedtxt(r1)} {seedtxt(r2)}')
 # game over (the clock runs out), then: fire does nothing, R retries, START -> menu
 mins, secs, dead = SYM['mins'], SYM['secs'], SYM['dead']
@@ -35,6 +35,6 @@ check(seedtxt(retry) == '0420' and state(retry)[0] == state(a)[0] and retry[SYM[
       'R retries the same seed from level 1')
 menu = run(G+' 3,0,0,T 60,0,0', 1)
 check((menu[0x230] | menu[0x231] << 8) < 0x1A00, 'START goes back to the menu')
-new = run(G+' 3,0,0,T 60,0,0 3,0,1 60,0,0', 1)
-check(state(new)[0] != state(a)[0], f'fire on the menu starts a new random seed ({seedtxt(new)})')
+new = run(G+' 3,0,0,T 60,0,0 3,0,1 10,0,0 3,0,1 60,0,0', 1)
+check(state(new)[0] != state(a)[0], f'START then fire on the menu: a new random seed ({seedtxt(new)})')
 done()

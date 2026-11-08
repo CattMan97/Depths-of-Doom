@@ -109,7 +109,7 @@ locked exit, without the stripes, and never opens.
 | Image A `$4000-$7FFF` | about 0.45K free (plus the start-up area, reused) | engine core and everything interrupts run |
 | Image B `$8000-$B7FF` | about 0.4K free | gameplay code |
 | RAM under the OS ROM | about 3.7K free (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
-| RAM `$3A50-$3BDC`, `$BA33-$BB8C` | about 0.7K | (the old shared display lists) |
+| RAM `$3B90-$3BDC`, `$BA5B-$BB8C` | about 0.4K | (the old shared display lists) |
 | RAM `$B800-$B9FF` | about 0.1K free | things (24 slots, with page 4), weapon and maze state |
 | Cartridge bank 4 | about 4K free | the overlay (menu, wake-up scene, demo, game-over banner) and resident extras |
 | Cartridge bank 5 | about 1.5K free | the ending's code (its area at `$1000` holds 2.75K) |
@@ -141,8 +141,8 @@ machines that have them, but the game must keep running on a plain 64K machine.
 Bug reports and ideas go in the repository's Issues.
 
 ## Controls (joystick, port 1, or the keyboard)
-Pick **joystick** or **keyboard** on the **options screen** (OPTIONS, the main menu's
-third row: left / right change it, fire goes back). The game then reads only that one;
+Pick **joystick** or **keyboard** on the **options screen** (OPTIONS on the main
+menu: left / right change it, fire goes back). The game then reads only that one;
 the menus always take both, and the choice lasts until the machine is switched off or
 RESET (the joystick is the default). The hint line on the menu shows the chosen
 controls.
@@ -182,13 +182,17 @@ inverse video, so they stand out from the words around them.
 
 Every level is a **new maze**, built from a 4-digit **seed** shown on the top bar.
 - **Main menu:** the title (the DOOM drips blood: each letter grows drips that swell
-  and let go of drops that fall down the screen), and two choices picked with the stick (up / down) and
-  started with fire, START or RETURN: **Start with a random seed**, or **Play your own
-  seed**. Typing 4 digits sets your seed (the newest digit shifts in from the right)
-  and moves to that option. A third row, **OPTIONS**, opens the options screen (the
-  controls: joystick or keyboard). The menu also shows the high score and the controls
-  (the chosen ones: stick and fire, or WASD, Q/E strafe and SHIFT; then START/P pause,
-  SELECT/M map, OPTION/O music).
+  and let go of drops that fall down the screen), and two choices picked with the stick
+  (up / down) and taken with fire, START or RETURN: **START** and **OPTIONS**.
+  - **START** opens the seed page: **Start with a random seed**, **Play your own seed**,
+    or **BACK** to the main menu. Typing 4 digits (on either page) sets your seed (the
+    newest digit shifts in from the right) and moves to the seed page's own-seed row.
+  - **OPTIONS** opens the options screen (the controls: joystick or keyboard).
+
+  After a page changes, fire must be let go before it picks again. The menu also
+  shows the high score and the controls (the chosen ones: stick and fire, or WASD,
+  Q/E strafe and SHIFT; then START/P pause, SELECT/M map, OPTION/O music). It is one
+  screen whose four rows each page fills in (`setpage`).
 - **Waking up:** a run started from the menu opens on your eyes: dark, a slit of
   light, a blink, then the corridor. You wake in the maze with no memory of how you
   got there; the story lines play on the bottom line, ending with a flashing **YOU
@@ -492,7 +496,8 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$2A00-$2BFF` | Maze generator stack (first half of each page); the braiding code sits in the second halves (from the overlay) |
 | `$2C00-$2FFF` | Walking distances (BFS) |
 | `$3A00-$3A4F` | Top bar (two lines) |
-| `$3A50-$3BDC` | Free (was a game display list) |
+| `$3A50-$3B8F` | Menu text that never changes (copied there while the menu is up) |
+| `$3B90-$3BDC` | Free (was a game display list) |
 | `$3BDD-$3BFD` | GOD MODE and level select messages (from the overlay) |
 | `$3C00-$3FFF` | BFS queue |
 | `$3F80-$3FEE` | Automap pickup dots (from the overlay; the BFS queue never reaches this far) |
@@ -502,8 +507,8 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |
 | `$B800-$B97E` | Things (part 2), weapon and maze variables |
 | `$B980-$B9F0` | Tunnel start and end (from the overlay, staged through `$2000`) |
-| `$BA00-$BA32` | Each gun's ammo, the mirrored exit-stripe tiles, the strafe key, the controls chosen, the options screen's setting line (`BSS5`) |
-| `$BA33-$BB8C` | Free (was a game display list) |
+| `$BA00-$BA5A` | Each gun's ammo, the mirrored exit-stripe tiles, the strafe key, the controls chosen, the options screen's setting line, a blank menu row (`BSS5`) |
+| `$BA5B-$BB8C` | Free (was a game display list) |
 | `$BB90-$BBFA` | Game-over banner code (from the overlay) |
 | `$BC00-$BFFF` | Automap: walls seen (also key-placement scratch) |
 | `$C000-$C5FF` | RAM under the OS ROM: the three game display lists (mirrored), 512 bytes each |
@@ -536,8 +541,9 @@ Needs `ca65`/`ld65` from cc65 and Python 3.
   screen and interrupts off for a moment; the menu then copies its resident parts into
   spare corners of RAM listed above: the small low-RAM pieces straight from the
   cartridge (past the overlay, in `xcptab`), the banner (it goes under the cartridge,
-  at `$BB90`) from the overlay's copy (`cptab`). The overlay itself (`$1000-$1AFF`) is
-  nearly full (about 20 bytes free); new menu text belongs past it in bank 4.
+  at `$BB90`) from the overlay's copy (`cptab`). Menu text that never changes is
+  copied from past the overlay to `$3A50-$3B8F` the same way (`OVLT1`, `OVLT2`). The
+  overlay itself (`$1000-$1AFF`) has about 120 bytes free.
 - **Ending:** `ending.s` is overlay 2 (bank 5, `ovl2.bin`), copied to `$1000` when level
   15 is cleared. `endart.py` draws its pictures (the corridor, the wasteland), the
   walking and standing figure (players 0 and 1) and the THE END lettering, packs them

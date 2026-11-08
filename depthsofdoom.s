@@ -6430,6 +6430,7 @@ ctlm:   .res 1          ; the controls chosen on the options screen: 0 joystick,
 ctlnow: .res 1          ; who's read now: 1 the joystick, 2 the keyboard, 3 both
                         ;   (the menus)
 ocur:   .res 40         ; the options screen's setting line (the bar)
+mblank: .res 40         ; a blank line, for the menu's empty rows
 .segment "BSS4"
 EXL:    .res MAXTH      ; things: position 8.8
 EXH:    .res MAXTH

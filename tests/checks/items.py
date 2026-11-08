@@ -4,10 +4,13 @@ import os, sys; sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..',
 from dod import *
 
 def msg_soon(g, n=10):
-    """The message line, polled (a snapshot can land while it is being redrawn)."""
+    """The message line, polled (a snapshot can land while it is being redrawn:
+    blank, or half printed): the first line that holds still for a frame."""
+    last = None
     for k in range(n):
-        if g.msg(): return g.msg()
-        g.run(1)
+        m = g.msg()
+        if m and m == last: return m
+        last = m; g.run(1)
     return g.msg()
 
 # ---- full stats: the pickup stays, and the line says why

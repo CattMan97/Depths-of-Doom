@@ -33,7 +33,7 @@ ok = True
 for k in range(3):
     g.run(1, key=-2); g.run(240)
     ok &= dlist(g) < 0x1A00
-    g.run(3, trig=1); g.run(200); g.run(5, trig=1); g.run(120)
+    g.run(3, trig=1); g.run(10); g.run(3, trig=1); g.run(200); g.run(5, trig=1); g.run(120)
     ok &= g.v('level') == 1 and g.v('dead') == 0
 check(ok, 'RESET mid-game returns to the menu, and a new run plays (3 times)')
 g.close()

@@ -113,8 +113,10 @@ class Game:
         the keyboard (as if chosen on the options screen)."""
         self.run(100)
         if keyboard: self.poke(SYM['ctlm'], 1)
-        if seed_digits:
+        if seed_digits:                # (typing goes to the seed page, your own seed)
             for c in seed_digits: self.run(4, key=ord(c)); self.run(6)
+        else:                          # START, then the seed page's first row: random
+            self.run(3, trig=1); self.run(10)
         self.run(3, trig=1)
         m = self.run(10)
         for _ in range(40):          # level built, then the wake-up scene (fire skips it)

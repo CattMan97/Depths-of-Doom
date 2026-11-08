@@ -66,8 +66,9 @@ def lines(g):
     return out
 g = Game(seed=5, tag='kb5'); g.run(100)
 mdl = dl(g)
-g.run(4, stick=2); g.run(4); g.run(4, stick=2); g.run(4)
-check(g.m[SYM['mcur']] == 2 if 'mcur' in SYM else True, 'down twice: OPTIONS is picked')
+check(lines(g)[:2] == ['START', 'OPTIONS'] and 'TYPE 4 DIGITS TO SET YOUR SEED' not in lines(g),
+      f'the main menu: just START and OPTIONS ({lines(g)})')
+g.run(4, stick=2); g.run(4); g.run(4, stick=2); g.run(4)          # (down twice: stops at OPTIONS)
 g.run(3, trig=1); g.run(10)
 check(dl(g) != mdl and 'JOYSTICK' in g.screen_text() if hasattr(g, 'screen_text') else dl(g) != mdl,
       'fire on OPTIONS opens the options screen')
@@ -79,14 +80,23 @@ check(any('W/S WALK' in l for l in lines(g)), f'the options screen describes the
 g.run(3, trig=1); g.run(10)
 check(dl(g) == mdl, 'fire goes back to the menu')
 check(any('WASD MOVE' in l for l in lines(g)), f"the menu's hint line shows the keyboard controls: {lines(g)}")
-g.run(4, stick=1); g.run(4); g.run(4, stick=1); g.run(4)   # (back up to the first row)
+g.run(4, stick=1); g.run(4)                    # (up: START)
+g.run(3, trig=1); g.run(10)
+check(dl(g) == mdl and lines(g)[:3] == ['START WITH A RANDOM SEED', 'PLAY YOUR OWN SEED:  0000', 'BACK'],
+      f'START: the seed page ({lines(g)[:4]})')
+g.run(4, stick=2); g.run(4); g.run(4, stick=2); g.run(4); g.run(4, stick=2); g.run(4)
+g.run(3, trig=1); g.run(10)
+check(lines(g)[:2] == ['START', 'OPTIONS'], f'BACK: the main menu again ({lines(g)[:2]})')
+for c in '1234': g.run(4, key=ord(c)); g.run(6)
+check(lines(g)[1] == 'PLAY YOUR OWN SEED:  1234', f'typing a seed on the main menu: the seed page, your own seed ({lines(g)[:2]})')
+g.run(4, stick=1); g.run(4)                    # (up: a random seed)
 g.run(3, trig=1); g.run(130)
 check(dl(g) != mdl and g.v('ctlnow') == 2, f'play: the game reads just the keyboard (ctlnow {g.v("ctlnow")})')
 g.close()
 
-# ---- the menu: SHIFT starts a run
+# ---- the menu: SHIFT (START, then a random seed) starts a run
 g = Game(seed=5, tag='kb2'); g.run(100)
-g.run(3, trig=SHIFT); g.run(130)
+g.run(3, trig=SHIFT); g.run(10); g.run(3, trig=SHIFT); g.run(130)
 check((g.m[0x230] | g.m[0x231] << 8) >= 0x1A00, 'SHIFT on the menu starts a run (the game display list is up)')
 g.close()
 done()

@@ -6,7 +6,7 @@
 ;    OVLBAN  ->$BB90 the game-over banner, copied to spare RAM by the menu
 ;    OVLBOT  $1A00  the demo bot (above buffer 0, so it survives the demo)
 ; =====================================================================
-.import mtitle, mopt1, mopt2, mopt3, mhint, mhs, mhelp1j, mhelp1k, mhelp2, mhelp3, mcols
+.import mtitle, mopt1, mopt2, mopt3, mostart, moback, mhint, mhs, mhelp1j, mhelp1k, mhelp2, mhelp3, mcols
 .import otitle, octlj, octlk, odescj, odesck, ohint1, ohint2
 .import banbits, msg_demo, imsg1, imsg2, imsg3, imsg4, msg_god, msg_lsel
 .importzp LSCOL
@@ -16,6 +16,8 @@
 .import __OVLC2_LOAD__, __OVLC2_RUN__, __OVLC2_SIZE__
 .import __OVLC3_LOAD__, __OVLC3_RUN__, __OVLC3_SIZE__
 .import __OVLC4_LOAD__, __OVLC4_RUN__, __OVLC4_SIZE__
+.import __OVLT1_LOAD__, __OVLT1_RUN__, __OVLT1_SIZE__
+.import __OVLT2_LOAD__, __OVLT2_RUN__, __OVLT2_SIZE__
 .import __RC_LOAD__, __RC_RUN__, __RC_SIZE__
 .import __RT0_LOAD__, __RT0_RUN__, __RT0_SIZE__
 .import __RT1_LOAD__, __RT1_RUN__, __RT1_SIZE__
@@ -118,8 +120,14 @@ MENU:        lda #0                  ; level dressing: straight from the cartrid
         sta ctlnow
         lda #0
         sta mcur
+        sta mpage
         sta srreq
-mback:  jsr hintset             ; (back from the options screen: here)
+        ldx #39
+@bl:    sta mblank,x
+        dex
+        bpl @bl
+mmain:  jsr hintset             ; (back from the options screen: here)
+        jsr setpage
         lda #<mdl
         sta SDLSTL
         lda #>mdl
@@ -160,7 +168,8 @@ mback:  jsr hintset             ; (back from the options screen: here)
 @dn:    cmp #13
         bne @act
         lda mcur
-        cmp #2
+        ldx mpage
+        cmp mlast,x
         bcs @act
         inc mcur
         jmp @act
@@ -199,17 +208,37 @@ mback:  jsr hintset             ; (back from the options screen: here)
         stx seedd+3
         lda #1
         sta seedset
-        sta mcur
+        sta mcur                ; (to the seed page, your own seed)
+        sta mpage
+        jsr setpage
 @act:   lda #0                  ; any input: stay on the menu
         sta idle
         sta idle+1
         jsr mdraw
         jmp @loop
-@sel:   lda mcur
+@sel:   lda mpage               ; the main page: START or OPTIONS
+        bne @sp
+        lda mcur
+        bne @op
+        lda #1                  ; START: the seed page
+        sta mpage
+        sta mfire               ; (fire must be let go before it picks again)
+        lda #0
+        sta mcur
+        jsr setpage
+        jmp @act
+@op:    jsr options             ; OPTIONS: the options screen, then back here
+        jmp mmain
+@sp:    lda mcur                ; the seed page: random, your own, or BACK
         cmp #2
         bne @play
-        jsr options             ; the options screen, then the menu again
-        jmp mback
+        lda #0
+        sta mpage
+        sta mcur
+        lda #1
+        sta mfire               ; (fire must be let go before it picks again)
+        jsr setpage
+        jmp @act
 @play:  jsr mexit
         lda ctlm                ; the game: just the controls chosen
         clc
@@ -382,30 +411,62 @@ mdraw:  ldx #3
         sta mopt2+SEEDCOL,x
         dex
         bpl @d
-        ldx #39
-@l:     lda mopt1,x
+        lda #2                  ; rows 0-2 of this page: the one picked as a bar
+        sta tmp2
+@r:     lda mpage
+        asl
+        asl
+        adc tmp2                ; (C clear)
+        tax
+        lda pglo,x
+        sta gptr
+        lda pghi,x
+        sta gptr+1
+        ldx #0
+        lda tmp2
+        cmp mcur
+        bne @n
+        ldx #$80
+@n:     stx tmp
+        ldy #39
+@c:     lda (gptr),y
         and #$7F
-        ldy mcur
-        bne @1
-        ora #$80
-@1:     sta mopt1,x
-        lda mopt2,x
-        and #$7F
-        ldy mcur
-        cpy #1
-        bne @2
-        ora #$80
-@2:     sta mopt2,x
-        lda mopt3,x
-        and #$7F
-        ldy mcur
-        cpy #2
-        bne @3
-        ora #$80
-@3:     sta mopt3,x
-        dex
-        bpl @l
+        ora tmp
+        sta (gptr),y
+        dey
+        bpl @c
+        dec tmp2
+        bpl @r
         rts
+
+; setpage: the menu's four rows show this page's lines (mpage: 0 the main
+;          page, 1 the seed page)
+setpage:lda mpage
+        asl
+        asl
+        sta tmp
+        ldy #3
+@l:     tya
+        clc
+        adc tmp
+        tax
+        lda pglo,x
+        pha
+        lda pghi,x
+        ldx rowoff,y
+        sta mdl+1,x
+        pla
+        sta mdl,x
+        dey
+        bpl @l
+        jmp mdraw
+; the pages' rows (the last one: not picked)
+pglo:   .byte <mostart, <mopt3, <mblank, <mblank
+        .byte <mopt1, <mopt2, <moback, <mhint
+pghi:   .byte >mostart, >mopt3, >mblank, >mblank
+        .byte >mopt1, >mopt2, >moback, >mhint
+rowoff: .byte mdr1-mdl, mdr2-mdl, mdr3-mdl, mdr4-mdl
+mlast:  .byte 1, 2                      ; each page's last row that can be picked
 
 ; hintset: the menu's hint line shows the controls chosen
 hintset:lda ctlm
@@ -546,9 +607,15 @@ xcptab: .word __RA1_LOAD__, __RA1_RUN__
         .byte <__OVLC3_SIZE__
         .word __OVLC4_LOAD__, __OVLC4_RUN__
         .byte <__OVLC4_SIZE__
+        .word __OVLT1_LOAD__, __OVLT1_RUN__
+        .byte <__OVLT1_SIZE__
+        .word __OVLT2_LOAD__, __OVLT2_RUN__
+        .byte <__OVLT2_SIZE__
 xcptabend:
 keytab: .byte $32, $1F, $1E, $1A, $18, $1D, $1B, $33, $35, $30   ; keys 0-9
-mcur:   .byte 0                 ; 0 random seed, 1 your own seed, 2 options
+mcur:   .byte 0                 ; the row picked (main page: 0 START, 1 OPTIONS;
+                                ;   seed page: 0 random, 1 your own, 2 BACK)
+mpage:  .byte 0
 idle:   .word 0
 mfire:  .byte 0
 mstk:   .byte 0
@@ -558,17 +625,17 @@ mdl:    .byte $70, $70, $70, $70    ; (all of it ends by line 200: TV safe)
         .byte $47
         .word mtitle
         .byte $70, $70, $70             ; (room for the drips)
-        .byte $42
-        .word mopt1
+        .byte $42               ; the four rows: setpage fills them in
+mdr1:   .word mostart
         .byte $70
         .byte $42
-        .word mopt2
+mdr2:   .word mopt3
         .byte $70
         .byte $42
-        .word mhint
+mdr3:   .word mblank
         .byte $70
         .byte $42
-        .word mopt3
+mdr4:   .word mblank
         .byte $70
         .byte $42
         .word mhs

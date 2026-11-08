@@ -10,7 +10,8 @@ def at_menu(g): return dlist(g) < 0x1A00
 # ---- the wake-up scene: its lines in order, then the clock starts
 g = Game(seed=5, tag='fl'); g.run(100)
 check(at_menu(g), 'power-on shows the menu')
-g.run(3, trig=1)
+g.run(3, trig=1); g.run(10)                  # START: the seed page
+g.run(3, trig=1)                             # a random seed
 lines = []
 for k in range(140):
     g.run(5); s = g.msg()
@@ -21,7 +22,7 @@ check(all(w in lines for w in want) and [l for l in lines if l in want][-len(wan
       f'wake-up lines in order: {lines}')
 check(g.v('dead') == 0, 'the run starts after the wake-up scene')
 g.close()
-g = Game(seed=5, tag='fl2'); g.run(100); g.run(3, trig=1); g.run(100); g.run(3, trig=1); g.run(30)
+g = Game(seed=5, tag='fl2'); g.run(100); g.run(3, trig=1); g.run(10); g.run(3, trig=1); g.run(100); g.run(3, trig=1); g.run(30)
 check(g.v('dead') == 0 and g.msg() == 'FIND THE EXIT DOOR!', 'fire skips the wake-up scene')
 # ---- key and button names show in inverse video, and the whole line still prints
 g.run(4, key=ord('p')); g.run(10)
@@ -39,8 +40,8 @@ x0, y0 = g.m[0x83], g.m[0x85]; g.run(600)
 check((g.m[0x83], g.m[0x85]) != (x0, y0) and g.v('dead') == 0, 'the demo player moves')
 g.run(3000)
 check(at_menu(g), 'the demo returns to the menu')
-g.run(3, trig=1); g.run(130)
-check(g.v('dead') == 1 and g.v('demo') == 0, 'fire after the demo starts a real run (wake-up scene)')
+g.run(3, trig=1); g.run(10); g.run(3, trig=1); g.run(130)
+check(g.v('dead') == 1 and g.v('demo') == 0, 'START, then fire, after the demo starts a real run (wake-up scene)')
 g.close()
 
 # ---- the ending: finishing level 15
