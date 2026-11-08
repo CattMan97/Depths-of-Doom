@@ -624,7 +624,7 @@ mstk:   .byte 0
 mdl:    .byte $70, $70, $70, $70    ; (all of it ends by line 200: TV safe)
         .byte $47
         .word mtitle
-        .byte $70, $70, $70             ; (room for the drips)
+        .byte $70, $70, $70, $70        ; (room for the drips)
         .byte $42               ; the four rows: setpage fills them in
 mdr1:   .word mostart
         .byte $70
@@ -639,8 +639,8 @@ mdr4:   .word mblank
         .byte $70
         .byte $42
         .word mhs
-        .byte $70, $70                  ; (a blank line less: room for mhelp3)
-        .byte $42
+        .byte $70                       ; (two blank lines less: room for mhelp3,
+        .byte $42                       ;   and for more space under the title)
 mdlh1 = *                       ; (its address: hintset)
         .word mhelp1j           ; (hintset: by the controls chosen)
         .byte $70
