@@ -106,7 +106,7 @@ locked exit, without the stripes, and never opens.
 ## Room to grow
 | Space | Size | Planned use |
 |---|---|---|
-| Image A `$4000-$7FFF` | about 0.45K free (plus the start-up area, reused) | engine core and everything interrupts run |
+| Image A `$4000-$7FFF` | about 0.4K free (plus the start-up area, reused) | engine core and everything interrupts run |
 | Image B `$8000-$B7FF` | about 0.4K free | gameplay code |
 | RAM under the OS ROM | about 3.7K free (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
 | RAM `$3B90-$3BDC`, `$BA5C-$BB8C` | about 0.4K | (the old shared display lists) |
@@ -504,7 +504,7 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$3BDD-$3BFD` | GOD MODE and level select messages (from the overlay) |
 | `$3C00-$3FFF` | BFS queue |
 | `$3F80-$3FEE` | Automap pickup dots (from the overlay; the BFS queue never reaches this far) |
-| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures, pickups, keyboard (about 470 bytes free) |
+| `$4000-$7FFF` | Image A: engine, interrupts, tables, wall textures, pickups, keyboard (about 400 bytes free) |
 | `$7D80-$7FFC` | Start-up code, then (copied by the menu) level dressing: pickups per level, entrance, keycard lines, exit check, automap marks |
 | `$8000-$B7FF` | Image B: gameplay code, sprites, messages (about 400 bytes free) |
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |
