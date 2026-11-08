@@ -147,7 +147,7 @@ the menus always take both, and the choice lasts until the machine is switched o
 RESET (the joystick is the default). The hint line on the menu shows the chosen
 controls.
 
-**Keyboard** (this branch, `keyboard-controls`): **W / S** walk forward / back, **A / D**
+**Keyboard**: **W / S** walk forward / back, **A / D**
 turn, **Q / E** strafe left / right, **SHIFT** fires. The Atari's keyboard reports
 one key at a time (SHIFT and the console keys are read on their own), so you can't
 walk and turn, or walk and strafe, at the same moment with keys alone; SHIFT fires

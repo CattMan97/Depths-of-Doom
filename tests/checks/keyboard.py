@@ -1,4 +1,4 @@
-"""The controls (keyboard-controls branch).  The options screen (the main
+"""The controls.  The options screen (the main
 menu's third row) picks the joystick or the keyboard; the game then reads
 just that one, while the menus take both.  Keyboard: W / S walk, A / D turn,
 Q / E strafe, SHIFT fires (also while walking); O music, M map either way.

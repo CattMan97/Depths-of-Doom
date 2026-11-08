@@ -28,8 +28,8 @@ step with the code** (behaviour, memory map, "Room to grow", speed figures).
   from it), and `tests/tools/compare.py OLD.car NEW.car` must report `0 differ`, unless
   the picture is meant to change. `tests/tools/profile.py` shows where the cycles go.
 - Harness input: stick is a **bit mask of directions pressed** (1 up, 2 down, 4 left,
-  8 right; 0 = centred) and trig **1 = pressed**, **+ 2 = SHIFT held** (the keyboard
-  branch's fire key; rebuild the harness with `tests/setup.sh` if trig 2 does
+  8 right; 0 = centred) and trig **1 = pressed**, **+ 2 = SHIFT held** (the keyboard's
+  fire key; rebuild the harness with `tests/setup.sh` if trig 2 does
   nothing). This is not the hardware's active-low convention.
 - A still view is not redrawn: after teleporting the player (`g.place`), run ~20
   frames before judging the picture. RAM snapshots can land mid-update: poll a few
@@ -75,7 +75,7 @@ step with the code** (behaviour, memory map, "Room to grow", speed figures).
 - Versions given to Zach are GitHub releases with the .CAR attached (`v1.0.0-fullrelease` = the
   OS-RAM speed rework plus the test suite). Tag pushes are refused from Claude's cloud
   sessions, so Zach creates releases and tags on github.com.
-- `keyboard-controls` is the keyboard version (W/S/A/D, Q/E strafe, SHIFT fires,
-  O music): developed alongside `main`; bring `main`'s changes over when asked.
+- `main` has both controls: joystick or keyboard (W/S/A/D, Q/E strafe, SHIFT fires,
+  O music), picked on the options screen. `keyboard-controls` was merged into it.
 - `deprecated-v1` is the old look (2-scanline pixels, 8 texture bands), kept for
   reference: don't develop on it. `main` has taller pixels and 4 bands.
