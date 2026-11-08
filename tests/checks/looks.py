@@ -2,7 +2,8 @@
 view of an exit, straight on, is mirror-symmetric as they scroll); on the
 automap, the player arrow points the way you face (8 directions), the green
 entrance mark covers just the entrance's wall tile, and the walls around you
-show even if you never looked at them."""
+show even if you never looked at them.  The entrance's door shows only on the
+face you start beside: from behind it's plain wall."""
 import os, sys; sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lib'))
 from dod import *
 from PIL import Image
@@ -77,4 +78,17 @@ g.place(t & 31, t >> 5, 0); g.run(10)
 S = g.m[0xBC00:0xC000]
 check(all(S[t+d] for d in (-33, -32, -31, -1, 0, 1, 31, 32, 33)), 'stepping into an unseen spot puts the 8 tiles around it on the automap')
 g.close()
+
+# ---- the entrance: the door (dark panels) from the front, plain wall (lit) from behind
+STEP = {0: (1, 0), 1: (-1, 0), 2: (0, 1), 3: (0, -1)}; FACE = {0: 0, 1: 512, 2: 256, 3: 768}
+for seed in ('1014', '1042'):          # (entrances with open floor behind them: west, south)
+    g = Game(seed=5, tag='lk5'); g.start(seed); g.run(4, key=ord('g')); g.run(5)
+    M = g.map(); e = M.index(3); ex, ey = e & 31, e >> 5; d = g.m[SYM['entdir']]; dx, dy = STEP[d]
+    g.place(ex - dx, ey - dy, FACE[d]); g.run(25)
+    front = np.asarray(Image.open(g.shot('lk5.ppm')).convert('L')).astype(int)[60:130, 120:220].mean()
+    g.place(ex + dx, ey + dy, (FACE[d] + 512) & 1023); g.run(25)
+    back = np.asarray(Image.open(g.shot('lk5.ppm')).convert('L')).astype(int)[60:130, 120:220].mean()
+    check(front < 40 and back > 25, f'seed {seed}: the entrance is a door from the start side (brightness {front:.0f}), '
+                                    f'wall from behind ({back:.0f})')
+    g.close()
 done()

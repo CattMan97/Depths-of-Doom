@@ -109,7 +109,7 @@ locked exit, without the stripes, and never opens.
 | Image A `$4000-$7FFF` | about 0.45K free (plus the start-up area, reused) | engine core and everything interrupts run |
 | Image B `$8000-$B7FF` | about 0.4K free | gameplay code |
 | RAM under the OS ROM | about 3.7K free (`$C900-$CFFF`, `$DC30-$DFFF`, `$FC00-$FFF9`) | more fast code and tables |
-| RAM `$3B90-$3BDC`, `$BA5B-$BB8C` | about 0.4K | (the old shared display lists) |
+| RAM `$3B90-$3BDC`, `$BA5C-$BB8C` | about 0.4K | (the old shared display lists) |
 | RAM `$B800-$B9FF` | about 0.1K free | things (24 slots, with page 4), weapon and maze state |
 | Cartridge bank 4 | about 4K free | the overlay (menu, wake-up scene, demo, game-over banner) and resident extras |
 | Cartridge bank 5 | about 1.5K free | the ending's code (its area at `$1000` holds 2.75K) |
@@ -239,7 +239,9 @@ Every level is a **new maze**, built from a 4-digit **seed** shown on the top ba
   it's plain **glowing white**, the brightest shade on screen. The walls either side of
   it have bright chevron stripes, pointing at the door from both sides and scrolling
   towards it, so it stands out down a corridor. The
-  entrance door looks like a locked exit, without the stripes.
+  entrance door looks like a locked exit, without the stripes. The door is only on the
+  face you start beside: if there's floor behind it, from there it's plain wall
+  (`entface`, from the way the entrance lies from the start, `entdir`).
 - Walls farther than about 5 tiles are drawn solid. Keycards and monsters are still in colour (they're sprites).
 - **Every level has a tint**, cycling gray, gold, gray, purple, gray, teal (`theme1` in
   `depthsofdoom.s`). Gold is hue 2: hue 1, the Atari's nominal gold, reads as yellow-green
@@ -508,8 +510,8 @@ The map array is 32x32 tiles; every level's maze is the same size, **11x11 cells
 | `$B780-$B7FF` | Start-up code, then the keycard lines and level-dressing variables |
 | `$B800-$B97E` | Things (part 2), weapon and maze variables |
 | `$B980-$B9F0` | Tunnel start and end (from the overlay, staged through `$2000`) |
-| `$BA00-$BA5A` | Each gun's ammo, the mirrored exit-stripe tiles, the strafe key, the controls chosen, the options screen's setting line, a blank menu row (`BSS5`) |
-| `$BA5B-$BB8C` | Free (was a game display list) |
+| `$BA00-$BA5B` | Each gun's ammo, the mirrored exit-stripe tiles, the strafe key, the controls chosen, the options screen's setting line, a blank menu row, the entrance's direction (`BSS5`) |
+| `$BA5C-$BB8C` | Free (was a game display list) |
 | `$BB90-$BBFA` | Game-over banner code (from the overlay) |
 | `$BC00-$BFFF` | Automap: walls seen (also key-placement scratch) |
 | `$C000-$C5FF` | RAM under the OS ROM: the three game display lists (mirrored), 512 bytes each |
@@ -599,7 +601,7 @@ built-in Altirra OS), driven by Python scripts:
 | `input_sound` | fire taps and latency, being hurt, the music stopping for the tunnel |
 | `system` | the stack page, the OS ROM off, RESET, 16K / 128K / 320K machines |
 | `keyboard` | W/S walk, A/D turn, Q/E strafe, SHIFT fires (alone and while walking), O music, M map; the options screen (joystick / keyboard), each choice ignoring the other controller in the game; SHIFT starts a run from the menu |
-| `looks` | the exit stripes point at the door from both sides (all four ways an exit faces); automap: the arrow's 8 directions, the entrance mark on its tile, the walls around you |
+| `looks` | the exit stripes point at the door from both sides (all four ways an exit faces); automap: the arrow's 8 directions, the entrance mark on its tile, the walls around you; the entrance's door only on its front face |
 
 `tests/tools/` has the speed tools: `bench.py` (100 fixed views, monsters frozen: the
 number quoted under Speed), `compare.py` (the same 32 views from two builds, picture by

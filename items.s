@@ -91,7 +91,8 @@ lvlextra:
         sta entx
         jmp lvmsgs
 @gok:   lda edir
-@put:   tay
+@put:   sta entdir              ; (the door shows only on the face towards you)
+        tay
         jsr estep
         lda #3                  ; tile 3: a door that never opens
         jsr stmap

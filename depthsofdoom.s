@@ -733,6 +733,28 @@ strafe: lda kstrafe
         jmp trymove
 @x:     rts
 
+; entface: a ray hit the entrance (tile 3).  A = 3 if it's the face towards
+;          the start tile (the ray steps the way the entrance lies from the
+;          start, across that face), else 1: plain wall.
+entface:lda entdir
+        lsr                     ; C: the step is negative (west / north)
+        tay                     ; Y: the face (0 x, 1 y)
+        lda #0
+        ror
+        sta tmp                 ; ($80 if negative)
+        cpy hitside
+        bne @w
+        lda stepx
+        cpy #0
+        beq @s
+        lda stepy
+@s:     eor tmp
+        bmi @w
+        lda #3
+        rts
+@w:     lda #1
+        rts
+
 ; seenear: the 3x3 tiles around you (curl, curh) count as seen, so the
 ;          automap shows the walls beside you even if you never looked at them
 seenear:sec
@@ -2449,7 +2471,10 @@ castray:
         lda #32
 @gh:    sta hcur
         lda hitv
-        asl
+        cmp #3                  ; the entrance: its door only on the face you
+        bne @ge                 ;   started beside; its other faces are wall
+        jsr entface
+@ge:    asl
         ora hitside
         tax
         lda coltab,x            ; 0 wall (fogged), 1 exit (glows), 2 locked exit
@@ -6431,6 +6456,8 @@ ctlnow: .res 1          ; who's read now: 1 the joystick, 2 the keyboard, 3 both
                         ;   (the menus)
 ocur:   .res 40         ; the options screen's setting line (the bar)
 mblank: .res 40         ; a blank line, for the menu's empty rows
+entdir: .res 1          ; the entrance: which way it is from the start tile
+                        ;   (0 east, 1 west, 2 south, 3 north)
 .segment "BSS4"
 EXL:    .res MAXTH      ; things: position 8.8
 EXH:    .res MAXTH
